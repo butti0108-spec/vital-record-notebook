@@ -2,8 +2,8 @@ var CACHE_NAME = "vital-record-notebook-v11";
 var APP_FILES = [
   "./",
   "./index.html",
-  "./style.css",
-  "./app.js",
+  "./style.css?v=11",
+  "./app.js?v=11",
   "./manifest.webmanifest",
   "./app-icon.svg"
 ];
@@ -11,7 +11,14 @@ var APP_FILES = [
 self.addEventListener("install", function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
-      return cache.addAll(APP_FILES);
+      return Promise.all(
+        APP_FILES.map(function (file) {
+          // ブラウザの保存済みファイルではなく、必ず最新版を取得します。
+          return fetch(new Request(file, { cache: "reload" })).then(function (response) {
+            return cache.put(file, response);
+          });
+        })
+      );
     })
   );
   self.skipWaiting();
@@ -34,8 +41,12 @@ self.addEventListener("activate", function (event) {
 self.addEventListener("fetch", function (event) {
   if (event.request.method !== "GET") return;
 
+  var request = event.request.mode === "navigate"
+    ? new Request(event.request.url, { cache: "reload" })
+    : event.request;
+
   event.respondWith(
-    fetch(event.request)
+    fetch(request)
       .then(function (response) {
         var copy = response.clone();
         caches.open(CACHE_NAME).then(function (cache) {
