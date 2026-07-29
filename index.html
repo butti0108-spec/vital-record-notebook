@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1759a7">
+  <meta name="description" content="血圧・脈拍・体重・体温をスマートフォンに記録するアプリです。">
+  <title>バイタル記録ノート</title>
+  <link rel="icon" href="app-icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="app-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 32" focusable="false">
+          <path d="M2 18h8l4-9 7 18 7-23 6 14h12"/>
+        </svg>
+      </div>
+      <div>
+        <h1>バイタル記録ノート</h1>
+        <p>毎日の健康記録をかんたんに</p>
+      </div>
+    </div>
+  </header>
+
+  <nav class="main-tabs" aria-label="画面切り替え">
+    <button type="button" class="main-tab is-active" id="recordTab" aria-controls="recordView" aria-selected="true">
+      <span aria-hidden="true">✏️</span>
+      記録する
+    </button>
+    <button type="button" class="main-tab" id="chartTab" aria-controls="chartView" aria-selected="false">
+      <span aria-hidden="true">📋</span>
+      記録を見る
+    </button>
+  </nav>
+
+  <main class="app-main">
+    <section id="testModePanel" class="test-mode-panel" aria-labelledby="testModeHeading" hidden>
+      <h2 id="testModeHeading">運用検証モード</h2>
+      <p>ここで作った記録は本番データと完全に分けて保存されます。</p>
+      <div class="test-scenario-buttons">
+        <button type="button" data-test-scenario="normal">通常データ</button>
+        <button type="button" data-test-scenario="caution">注意データ</button>
+        <button type="button" data-test-scenario="danger">緊急確認データ</button>
+        <button type="button" data-test-scenario="empty">空にする</button>
+      </div>
+      <details class="test-checklist">
+        <summary>確認項目を開く</summary>
+        <ul>
+          <li>保存、入力ミス警告、通常と異なる値の再確認</li>
+          <li>保存した記録の修正と削除</li>
+          <li>1週間・1か月・1年・自由期間の切り替え</li>
+          <li>平均値、変化傾向、通常・注意・緊急確認の表示</li>
+          <li>血圧・脈拍・体重グラフ</li>
+          <li>年齢、最新体重、BMIの自動計算</li>
+          <li>CSVへの保存とCSVからの復元</li>
+        </ul>
+      </details>
+      <a class="test-exit-link" href="./">通常画面に戻る</a>
+    </section>
+
+    <section id="recordView" class="view-panel" aria-labelledby="recordHeading">
+      <div class="intro-card">
+        <h2 id="recordHeading" class="visually-hidden">バイタルを記録する</h2>
+        <p id="currentDateTime" class="current-date-time"></p>
+        <div id="currentTimingLabel" class="current-timing-label" aria-label="現在の記録区分">
+          <span id="currentTimingIcon" class="timing-icon" aria-hidden="true"></span>
+          <span id="currentTimingText" class="timing-text"></span>
+        </div>
+        <p class="intro-note">測定した数字を、上から順番に入力してください。</p>
+      </div>
+
+      <form id="vitalForm" class="record-form" novalidate>
+        <input type="hidden" id="editingId">
+        <p id="editNotice" class="edit-notice" hidden></p>
+
+        <section class="form-card compact-measurements" aria-labelledby="measurementsHeading">
+          <h2 id="measurementsHeading" class="compact-card-title">測定した数値</h2>
+
+          <div class="compact-section">
+            <h3><span class="heading-icon red" aria-hidden="true">♥</span> 血圧</h3>
+            <div class="field-grid-two">
+              <div class="field-group">
+                <label for="sys">最高 <small>上の血圧</small></label>
+                <div class="number-input">
+                  <input type="number" id="sys" inputmode="numeric" min="40" max="300" placeholder="120" required>
+                  <span>mmHg</span>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label for="dia">最低 <small>下の血圧</small></label>
+                <div class="number-input">
+                  <input type="number" id="dia" inputmode="numeric" min="30" max="200" placeholder="80" required>
+                  <span>mmHg</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="compact-section pulse-section">
+            <h3><span class="heading-icon pink" aria-hidden="true">♪</span> 脈拍</h3>
+            <div class="number-input">
+              <input type="number" id="pulse" inputmode="numeric" min="20" max="250" placeholder="70" aria-label="1分間の脈拍数" required>
+              <span>回/分</span>
+            </div>
+          </div>
+
+          <div class="compact-section morning-fields" id="morningFields" aria-labelledby="morningHeading">
+            <h3 id="morningHeading"><span class="heading-icon green" aria-hidden="true">●</span> 朝のみ <small>任意</small></h3>
+            <div class="field-grid-two">
+              <div class="field-group">
+                <label for="weight">体重</label>
+                <div class="number-input">
+                  <input type="number" id="weight" inputmode="decimal" step="0.1" min="20" max="200" placeholder="50.0">
+                  <span>kg</span>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label for="temp">体温</label>
+                <div class="number-input">
+                  <input type="number" id="temp" inputmode="decimal" step="0.1" min="30" max="45" placeholder="36.5">
+                  <span>℃</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div id="formError" class="form-message error-message" role="alert" hidden></div>
+
+        <div class="save-area">
+          <button type="submit" class="primary-button" id="saveButton">
+            <span aria-hidden="true">✓</span>
+            <span id="saveButtonText">この内容で保存する</span>
+          </button>
+          <button type="button" class="secondary-button" id="cancelEditButton" hidden>編集をやめる</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="chartView" class="view-panel" aria-labelledby="chartHeading" hidden>
+      <div class="chart-intro">
+        <h2 id="chartHeading">記録を見る</h2>
+        <p>期間を選んで、数値の変化と目安を確認できます。</p>
+      </div>
+
+      <section class="period-card" aria-labelledby="periodHeading">
+        <h3 id="periodHeading">表示する期間</h3>
+        <div class="period-buttons" role="group" aria-label="グラフと分析の表示期間">
+          <button type="button" data-period="week">1週間</button>
+          <button type="button" data-period="month" class="is-active">1か月</button>
+          <button type="button" data-period="year">1年</button>
+          <button type="button" data-period="custom">自由</button>
+        </div>
+        <div id="customPeriod" class="custom-period" hidden>
+          <div>
+            <label for="periodStart">開始日</label>
+            <input type="date" id="periodStart">
+          </div>
+          <div>
+            <label for="periodEnd">終了日</label>
+            <input type="date" id="periodEnd">
+          </div>
+          <button type="button" id="applyPeriodButton">この期間を表示</button>
+        </div>
+        <p id="periodSummary" class="period-summary"></p>
+        <p id="periodError" class="period-error" role="alert" hidden></p>
+      </section>
+
+      <section id="healthAlert" class="health-alert is-ok" aria-labelledby="healthAlertHeading">
+        <h3 id="healthAlertHeading">今回の確認</h3>
+        <div id="healthAlertMessages"></div>
+        <p class="health-alert-note">この表示は診断ではありません。体調に異変がある場合は、数値にかかわらず医療機関へ相談してください。</p>
+      </section>
+
+      <section class="analysis-card" aria-labelledby="analysisHeading">
+        <h3 id="analysisHeading">この期間のまとめ</h3>
+        <div class="analysis-grid">
+          <div>
+            <span>記録数</span>
+            <strong id="analysisCount">0回</strong>
+          </div>
+          <div>
+            <span>平均血圧</span>
+            <strong id="analysisBp">―</strong>
+          </div>
+          <div>
+            <span>平均脈拍</span>
+            <strong id="analysisPulse">―</strong>
+          </div>
+          <div>
+            <span>体重の変化</span>
+            <strong id="analysisWeight">―</strong>
+          </div>
+        </div>
+        <p id="analysisTrend" class="analysis-trend">記録がたまると変化の傾向を表示します。</p>
+      </section>
+
+      <section class="chart-card" aria-labelledby="bpChartHeading">
+        <h3 id="bpChartHeading">血圧・脈拍</h3>
+        <div class="chart-legend" aria-hidden="true">
+          <span><i class="legend-line sys"></i>最高</span>
+          <span><i class="legend-line dia"></i>最低</span>
+          <span><i class="legend-line pulse"></i>脈拍</span>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="bpChart" width="520" height="330" aria-label="血圧と脈拍の推移グラフ"></canvas>
+        </div>
+        <p id="bpChartEmpty" class="empty-chart" hidden>グラフに表示できる記録がありません。</p>
+      </section>
+
+      <section class="chart-card" aria-labelledby="weightChartHeading">
+        <h3 id="weightChartHeading">体重</h3>
+        <div class="canvas-wrap small">
+          <canvas id="weightChart" width="520" height="260" aria-label="体重の推移グラフ"></canvas>
+        </div>
+        <p id="weightChartEmpty" class="empty-chart" hidden>体重の記録がまだありません。</p>
+      </section>
+
+      <details class="guideline-card">
+        <summary>
+          <span>判断の目安について</span>
+          <span class="summary-state" aria-hidden="true">開く</span>
+        </summary>
+        <div class="guideline-body">
+          <p>家庭血圧は5日以上の平均が135/85mmHg以上の場合、医療機関への相談が推奨されています（日本高血圧学会「高血圧管理・治療ガイドライン2025」）。1回の数値だけで判断せず、安静にして測り直してください。</p>
+          <p>最高血圧180以上または最低血圧120以上で、胸痛・息苦しさ・ろれつが回らない・手足のまひ・激しい頭痛などがある場合は、救急要請を検討してください。</p>
+        </div>
+      </details>
+
+      <section class="history-section" aria-labelledby="historyHeading">
+        <div class="section-title-row">
+          <h2 id="historyHeading">保存した記録</h2>
+          <span id="recordCount" class="record-count">0件</span>
+        </div>
+        <div id="historyList" class="history-list"></div>
+      </section>
+
+      <details class="profile-card">
+        <summary>
+          <span>体の情報</span>
+          <span id="profileSummary" class="summary-state">未設定</span>
+        </summary>
+        <div class="profile-body">
+          <p class="profile-note">年齢は生年月日から自動計算します。入力内容はこの端末内だけに保存されます。</p>
+          <form id="profileForm" class="profile-form" novalidate>
+            <div class="profile-fields">
+              <div class="profile-field">
+                <label for="birthDate">生年月日</label>
+                <input type="date" id="birthDate" required>
+              </div>
+              <div class="profile-field">
+                <label for="height">身長</label>
+                <div class="profile-number-input">
+                  <input type="number" id="height" inputmode="decimal" step="0.1" min="80" max="220" placeholder="150.0" required>
+                  <span>cm</span>
+                </div>
+              </div>
+            </div>
+            <div id="profileError" class="form-message error-message" role="alert" hidden></div>
+            <button type="submit" class="profile-save-button">体の情報を保存する</button>
+          </form>
+
+          <div class="profile-results" aria-live="polite">
+            <div>
+              <span>年齢</span>
+              <strong id="profileAge">未設定</strong>
+            </div>
+            <div>
+              <span>身長</span>
+              <strong id="profileHeight">未設定</strong>
+            </div>
+            <div>
+              <span>最新体重</span>
+              <strong id="profileWeight">記録なし</strong>
+            </div>
+            <div>
+              <span>BMI</span>
+              <strong id="profileBmi">―</strong>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="backup-card">
+        <summary>
+          <span>データの保存・復元</span>
+          <span class="summary-state" aria-hidden="true">開く</span>
+        </summary>
+        <div class="backup-body">
+          <p>スマホの故障や買い替えに備えて、記録をファイルに保存できます。</p>
+          <div class="backup-actions">
+            <button type="button" class="backup-button" id="exportButton">
+              <span aria-hidden="true">↓</span> CSVに保存
+            </button>
+            <label class="backup-button import-button" for="importFile">
+              <span aria-hidden="true">↑</span> CSVから戻す
+            </label>
+            <input type="file" id="importFile" accept=".csv,text/csv" hidden>
+          </div>
+          <p class="backup-note">「CSVに保存」は月に1回程度行うと安心です。</p>
+        </div>
+      </details>
+
+      <button type="button" class="primary-button back-to-form" id="backToFormButton">
+        入力画面に戻る
+      </button>
+    </section>
+  </main>
+
+  <div id="statusToast" class="status-toast" role="status" aria-live="polite" hidden>
+    <span id="statusIcon" aria-hidden="true">✓</span>
+    <span id="statusText"></span>
+  </div>
+
+  <div id="confirmDialog" class="dialog-backdrop" hidden>
+    <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle" aria-describedby="dialogMessage">
+      <div class="dialog-icon" aria-hidden="true">!</div>
+      <h2 id="dialogTitle">記録を削除しますか？</h2>
+      <p id="dialogMessage">削除すると元に戻せません。</p>
+      <div class="dialog-actions">
+        <button type="button" class="secondary-button" id="dialogCancel">やめる</button>
+        <button type="button" class="danger-button" id="dialogConfirm">削除する</button>
+      </div>
+    </div>
+  </div>
+
+  <noscript>
+    <p class="noscript-message">このアプリを使用するにはJavaScriptを有効にしてください。</p>
+  </noscript>
+</body>
+</html>
