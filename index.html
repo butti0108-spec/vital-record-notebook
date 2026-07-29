@@ -8,8 +8,8 @@
   <title>バイタル記録ノート</title>
   <link rel="icon" href="app-icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=11">
-  <script src="app.js?v=11" defer></script>
+  <link rel="stylesheet" href="style.css?v=12">
+  <script src="app.js?v=12" defer></script>
 </head>
 <body>
   <header class="app-header">
@@ -144,12 +144,13 @@
     </section>
 
     <section id="chartView" class="view-panel" aria-label="記録を見る" hidden>
+      <p class="record-display-label">表示を切り替える</p>
       <div class="record-display-tabs" role="tablist" aria-label="記録の表示方法">
         <button type="button" id="calendarModeTab" class="is-active" role="tab" aria-selected="true" aria-controls="calendarPanel">
-          <span aria-hidden="true">▦</span> カレンダー
+          カレンダー
         </button>
         <button type="button" id="graphModeTab" role="tab" aria-selected="false" aria-controls="graphPanel">
-          <span aria-hidden="true">⌁</span> グラフ・分析
+          グラフ・分析
         </button>
       </div>
 

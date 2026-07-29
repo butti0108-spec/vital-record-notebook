@@ -1282,20 +1282,18 @@ input[type="date"]:focus {
   line-height: 1.6;
 }
 
-.chart-intro {
-  padding: 16px 18px;
-}
-
-.chart-intro p {
-  margin: 2px 0 0;
-  color: var(--muted);
+.record-display-label {
+  margin: 12px 4px 0;
+  color: #34465b;
+  font-size: 1rem;
+  font-weight: 900;
 }
 
 .record-display-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 7px;
-  margin-top: 12px;
+  margin-top: 6px;
   padding: 5px;
   border: 1px solid #cfdae6;
   border-radius: 14px;
@@ -1304,7 +1302,11 @@ input[type="date"]:focus {
 }
 
 .record-display-tabs button {
-  min-height: 54px;
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
   padding: 8px 5px;
   border: 2px solid transparent;
   border-radius: 10px;
@@ -1318,6 +1320,13 @@ input[type="date"]:focus {
   border-color: #73a8e3;
   background: var(--blue-light);
   color: var(--blue-dark);
+}
+
+.record-display-tabs button.is-active::after {
+  content: "選択中";
+  margin-top: 2px;
+  font-size: 0.7rem;
+  line-height: 1;
 }
 
 .calendar-panel {
