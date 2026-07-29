@@ -4,6 +4,7 @@
   var TEST_MODE = /(?:\?|&)test=1(?:&|$)/.test(location.search);
   var STORAGE_KEY = "vital-record-notebook-records" + (TEST_MODE ? "-test" : "");
   var PROFILE_KEY = "vital-record-notebook-profile" + (TEST_MODE ? "-test" : "");
+  var VIEW_MODE_KEY = "vital-record-notebook-view-mode" + (TEST_MODE ? "-test" : "");
   var storageReady = false;
   var records = [];
   var profile = { birthDate: "", height: null };
@@ -13,6 +14,9 @@
   var pendingWarningSignature = "";
   var importedProfileCandidate = null;
   var activePeriod = "month";
+  var activeRecordsMode = "calendar";
+  var calendarMonth = new Date();
+  var selectedCalendarDate = "";
 
   var elements = {};
 
@@ -96,6 +100,17 @@
     elements.healthAlertMessages = document.getElementById("healthAlertMessages");
     elements.testModePanel = document.getElementById("testModePanel");
     elements.testScenarioButtons = document.querySelectorAll("[data-test-scenario]");
+    elements.calendarModeTab = document.getElementById("calendarModeTab");
+    elements.graphModeTab = document.getElementById("graphModeTab");
+    elements.calendarPanel = document.getElementById("calendarPanel");
+    elements.graphPanel = document.getElementById("graphPanel");
+    elements.calendarHistory = document.getElementById("calendarHistory");
+    elements.calendarGrid = document.getElementById("calendarGrid");
+    elements.calendarMonthLabel = document.getElementById("calendarMonthLabel");
+    elements.previousMonthButton = document.getElementById("previousMonthButton");
+    elements.nextMonthButton = document.getElementById("nextMonthButton");
+    elements.currentMonthButton = document.getElementById("currentMonthButton");
+    elements.selectedDateLabel = document.getElementById("selectedDateLabel");
   }
 
   function setInitialValues() {
@@ -106,6 +121,8 @@
     elements.periodEnd.value = toLocalDateString(today);
     elements.periodStart.max = toLocalDateString(today);
     elements.periodEnd.max = toLocalDateString(today);
+    calendarMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    selectedCalendarDate = toLocalDateString(today);
     updateCurrentDateTime();
     updateMorningFields();
     updatePeriodSummary(getPeriodBounds());
@@ -140,6 +157,19 @@
       elements.periodButtons[periodIndex].addEventListener("click", handlePeriodChange);
     }
     elements.applyPeriodButton.addEventListener("click", applyCustomPeriod);
+    elements.calendarModeTab.addEventListener("click", function () {
+      switchRecordsMode("calendar", true);
+    });
+    elements.graphModeTab.addEventListener("click", function () {
+      switchRecordsMode("graph", true);
+    });
+    elements.previousMonthButton.addEventListener("click", function () {
+      changeCalendarMonth(-1);
+    });
+    elements.nextMonthButton.addEventListener("click", function () {
+      changeCalendarMonth(1);
+    });
+    elements.currentMonthButton.addEventListener("click", showCurrentCalendarMonth);
     for (var testIndex = 0; testIndex < elements.testScenarioButtons.length; testIndex += 1) {
       elements.testScenarioButtons[testIndex].addEventListener("click", loadTestScenario);
     }
@@ -168,7 +198,7 @@
 
     var resizeTimer = null;
     window.addEventListener("resize", function () {
-      if (elements.chartView.hidden) return;
+      if (elements.chartView.hidden || activeRecordsMode !== "graph") return;
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(renderCharts, 180);
     });
@@ -178,6 +208,53 @@
     elements.testModePanel.hidden = !TEST_MODE;
     if (!TEST_MODE) return;
     document.title = "【運用検証】バイタル記録ノート";
+  }
+
+  function loadViewPreference() {
+    var savedMode = localStorage.getItem(VIEW_MODE_KEY);
+    activeRecordsMode = savedMode === "graph" ? "graph" : "calendar";
+    switchRecordsMode(activeRecordsMode, false);
+  }
+
+  function switchRecordsMode(mode, persist) {
+    activeRecordsMode = mode === "graph" ? "graph" : "calendar";
+    var showCalendar = activeRecordsMode === "calendar";
+    elements.calendarPanel.hidden = !showCalendar;
+    elements.calendarHistory.hidden = !showCalendar;
+    elements.graphPanel.hidden = showCalendar;
+    elements.calendarModeTab.classList.toggle("is-active", showCalendar);
+    elements.graphModeTab.classList.toggle("is-active", !showCalendar);
+    elements.calendarModeTab.setAttribute("aria-selected", String(showCalendar));
+    elements.graphModeTab.setAttribute("aria-selected", String(!showCalendar));
+
+    if (persist && storageReady) {
+      try {
+        localStorage.setItem(VIEW_MODE_KEY, activeRecordsMode);
+      } catch (error) {
+        // 表示方法を記憶できなくても、切り替え機能はそのまま使用できます。
+      }
+    }
+    if (showCalendar) {
+      renderCalendar();
+      renderHistory();
+    } else {
+      setTimeout(renderDashboard, 30);
+    }
+  }
+
+  function changeCalendarMonth(amount) {
+    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + amount, 1);
+    selectedCalendarDate = toLocalDateString(calendarMonth);
+    renderCalendar();
+    renderHistory();
+  }
+
+  function showCurrentCalendarMonth() {
+    var today = new Date();
+    calendarMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    selectedCalendarDate = toLocalDateString(today);
+    renderCalendar();
+    renderHistory();
   }
 
   function loadTestScenario(event) {
@@ -360,6 +437,7 @@
 
     try {
       storageReady = true;
+      loadViewPreference();
       loadProfile();
       loadRecords();
     } catch (error) {
@@ -462,12 +540,14 @@
       records = saved ? JSON.parse(saved) : [];
       if (!Array.isArray(records)) records = [];
       sortRecords();
+      renderCalendar();
       renderHistory();
       renderProfile();
-      if (!elements.chartView.hidden) renderDashboard();
+      if (!elements.chartView.hidden && activeRecordsMode === "graph") renderDashboard();
       if (callback) callback();
     } catch (error) {
       records = [];
+      renderCalendar();
       renderHistory();
       showToast("記録を読み込めませんでした。", "error");
     }
@@ -666,21 +746,111 @@
     return hour >= 3 && hour < 15 ? "朝" : "夜";
   }
 
+  function renderCalendar() {
+    elements.calendarGrid.innerHTML = "";
+    var year = calendarMonth.getFullYear();
+    var month = calendarMonth.getMonth();
+    var firstDay = new Date(year, month, 1).getDay();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var todayText = toLocalDateString(new Date());
+    var currentMonthText = todayText.slice(0, 7);
+    var displayedMonthText = year + "-" + pad2(month + 1);
+    var recordsByDate = {};
+
+    elements.calendarMonthLabel.textContent = year + "年" + (month + 1) + "月";
+    elements.currentMonthButton.hidden = displayedMonthText === currentMonthText;
+
+    for (var recordIndex = 0; recordIndex < records.length; recordIndex += 1) {
+      var record = records[recordIndex];
+      if (!recordsByDate[record.date]) recordsByDate[record.date] = [];
+      recordsByDate[record.date].push(record);
+    }
+
+    for (var blank = 0; blank < firstDay; blank += 1) {
+      var emptyDay = document.createElement("span");
+      emptyDay.className = "calendar-empty-day";
+      emptyDay.setAttribute("aria-hidden", "true");
+      elements.calendarGrid.appendChild(emptyDay);
+    }
+
+    for (var day = 1; day <= daysInMonth; day += 1) {
+      var dateText = year + "-" + pad2(month + 1) + "-" + pad2(day);
+      elements.calendarGrid.appendChild(createCalendarDayButton(
+        dateText,
+        day,
+        recordsByDate[dateText] || [],
+        dateText === todayText
+      ));
+    }
+  }
+
+  function createCalendarDayButton(dateText, dayNumber, dayRecords, isToday) {
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "calendar-day";
+    button.setAttribute("role", "gridcell");
+
+    var hasMorning = false;
+    var hasNight = false;
+    var alertLevel = "";
+    for (var i = 0; i < dayRecords.length; i += 1) {
+      if (dayRecords[i].timing === "朝") hasMorning = true;
+      if (dayRecords[i].timing === "夜") hasNight = true;
+      var recordLevel = getRecordAlertLevel(dayRecords[i]);
+      if (recordLevel === "danger") alertLevel = "danger";
+      else if (recordLevel === "caution" && alertLevel !== "danger") alertLevel = "caution";
+    }
+
+    if (dayRecords.length) button.classList.add("has-records");
+    if (alertLevel) button.classList.add("is-" + alertLevel);
+    if (isToday) button.classList.add("is-today");
+    if (dateText === selectedCalendarDate) button.classList.add("is-selected");
+
+    var number = document.createElement("span");
+    number.className = "calendar-day-number";
+    number.textContent = dayNumber;
+    var marks = document.createElement("span");
+    marks.className = "calendar-day-marks";
+    marks.textContent = (hasMorning ? "☀" : "") + (hasNight ? "🌙" : "");
+    button.appendChild(number);
+    button.appendChild(marks);
+
+    var label = formatRecordDate(dateText);
+    if (dayRecords.length) {
+      label += "、" + (hasMorning ? "朝" : "") + (hasMorning && hasNight ? "と" : "") + (hasNight ? "夜" : "") + "の記録あり";
+      if (alertLevel === "danger") label += "、すぐ確認が必要";
+      else if (alertLevel === "caution") label += "、高め・注意";
+    } else {
+      label += "、記録なし";
+    }
+    button.setAttribute("aria-label", label);
+    button.addEventListener("click", function () {
+      selectedCalendarDate = dateText;
+      renderCalendar();
+      renderHistory();
+      scrollElementIntoView(elements.calendarHistory);
+    });
+    return button;
+  }
+
   function renderHistory() {
     elements.historyList.innerHTML = "";
-    elements.recordCount.textContent = records.length + "件";
+    var selectedRecords = records.filter(function (record) {
+      return record.date === selectedCalendarDate;
+    });
+    elements.recordCount.textContent = selectedRecords.length + "件";
+    elements.selectedDateLabel.textContent = formatRecordDate(selectedCalendarDate);
 
-    if (records.length === 0) {
+    if (selectedRecords.length === 0) {
       var empty = document.createElement("p");
       empty.className = "empty-history";
-      empty.textContent = "まだ記録がありません。上の欄から入力してください。";
+      empty.textContent = "この日の記録はありません。";
       elements.historyList.appendChild(empty);
       return;
     }
 
-    var displayed = records.slice(0, 14);
-    for (var i = 0; i < displayed.length; i += 1) {
-      elements.historyList.appendChild(createHistoryCard(displayed[i]));
+    for (var i = 0; i < selectedRecords.length; i += 1) {
+      elements.historyList.appendChild(createHistoryCard(selectedRecords[i]));
     }
   }
 
@@ -856,7 +1026,9 @@
     elements.chartTab.setAttribute("aria-selected", String(showChart));
 
     if (showChart) {
-      setTimeout(renderDashboard, 30);
+      setTimeout(function () {
+        switchRecordsMode(activeRecordsMode, false);
+      }, 30);
     }
     window.scrollTo(0, 0);
   }

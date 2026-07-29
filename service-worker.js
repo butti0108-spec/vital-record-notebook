@@ -1,4 +1,4 @@
-var CACHE_NAME = "vital-record-notebook-v10";
+var CACHE_NAME = "vital-record-notebook-v11";
 var APP_FILES = [
   "./",
   "./index.html",

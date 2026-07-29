@@ -146,9 +146,40 @@
     <section id="chartView" class="view-panel" aria-labelledby="chartHeading" hidden>
       <div class="chart-intro">
         <h2 id="chartHeading">記録を見る</h2>
-        <p>期間を選んで、数値の変化と目安を確認できます。</p>
+        <p>カレンダーまたはグラフで記録を確認できます。</p>
       </div>
 
+      <div class="record-display-tabs" role="tablist" aria-label="記録の表示方法">
+        <button type="button" id="calendarModeTab" class="is-active" role="tab" aria-selected="true" aria-controls="calendarPanel">
+          <span aria-hidden="true">▦</span> カレンダー
+        </button>
+        <button type="button" id="graphModeTab" role="tab" aria-selected="false" aria-controls="graphPanel">
+          <span aria-hidden="true">⌁</span> グラフ・分析
+        </button>
+      </div>
+
+      <section id="calendarPanel" class="calendar-panel" role="tabpanel" aria-labelledby="calendarModeTab">
+        <div class="calendar-card">
+          <div class="calendar-toolbar">
+            <button type="button" id="previousMonthButton" aria-label="前の月">‹</button>
+            <h3 id="calendarMonthLabel"></h3>
+            <button type="button" id="nextMonthButton" aria-label="次の月">›</button>
+          </div>
+          <button type="button" id="currentMonthButton" class="current-month-button">今月に戻る</button>
+          <div class="calendar-weekdays" aria-hidden="true">
+            <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+          </div>
+          <div id="calendarGrid" class="calendar-grid" role="grid" aria-label="記録カレンダー"></div>
+          <div class="calendar-legend">
+            <span>☀ 朝</span>
+            <span>🌙 夜</span>
+            <span class="caution">注意</span>
+            <span class="danger">すぐ確認</span>
+          </div>
+        </div>
+      </section>
+
+      <div id="graphPanel" role="tabpanel" aria-labelledby="graphModeTab" hidden>
       <section class="period-card" aria-labelledby="periodHeading">
         <h3 id="periodHeading">表示する期間</h3>
         <div class="period-buttons" role="group" aria-label="グラフと分析の表示期間">
@@ -232,12 +263,14 @@
           <p>最高血圧180以上または最低血圧120以上で、胸痛・息苦しさ・ろれつが回らない・手足のまひ・激しい頭痛などがある場合は、救急要請を検討してください。</p>
         </div>
       </details>
+      </div>
 
-      <section class="history-section" aria-labelledby="historyHeading">
+      <section id="calendarHistory" class="history-section calendar-history" aria-labelledby="historyHeading">
         <div class="section-title-row">
-          <h2 id="historyHeading">保存した記録</h2>
+          <h2 id="historyHeading">選んだ日の記録</h2>
           <span id="recordCount" class="record-count">0件</span>
         </div>
+        <p id="selectedDateLabel" class="selected-date-label"></p>
         <div id="historyList" class="history-list"></div>
       </section>
 
