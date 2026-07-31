@@ -71,8 +71,10 @@
     elements.dialogCancel = document.getElementById("dialogCancel");
     elements.dialogConfirm = document.getElementById("dialogConfirm");
     elements.bpChart = document.getElementById("bpChart");
+    elements.pulseChart = document.getElementById("pulseChart");
     elements.weightChart = document.getElementById("weightChart");
     elements.bpChartEmpty = document.getElementById("bpChartEmpty");
+    elements.pulseChartEmpty = document.getElementById("pulseChartEmpty");
     elements.weightChartEmpty = document.getElementById("weightChartEmpty");
     elements.profileForm = document.getElementById("profileForm");
     elements.birthDate = document.getElementById("birthDate");
@@ -90,10 +92,16 @@
     elements.applyPeriodButton = document.getElementById("applyPeriodButton");
     elements.periodSummary = document.getElementById("periodSummary");
     elements.periodError = document.getElementById("periodError");
-    elements.analysisCount = document.getElementById("analysisCount");
-    elements.analysisBp = document.getElementById("analysisBp");
-    elements.analysisPulse = document.getElementById("analysisPulse");
+    elements.analysisMorningSys = document.getElementById("analysisMorningSys");
+    elements.analysisMorningDia = document.getElementById("analysisMorningDia");
+    elements.analysisNightSys = document.getElementById("analysisNightSys");
+    elements.analysisNightDia = document.getElementById("analysisNightDia");
+    elements.analysisMorningPulse = document.getElementById("analysisMorningPulse");
+    elements.analysisNightPulse = document.getElementById("analysisNightPulse");
+    elements.analysisTargetRate = document.getElementById("analysisTargetRate");
     elements.analysisWeight = document.getElementById("analysisWeight");
+    elements.analysisUsualTemp = document.getElementById("analysisUsualTemp");
+    elements.analysisUsualTempNote = document.getElementById("analysisUsualTempNote");
     elements.analysisTrend = document.getElementById("analysisTrend");
     elements.healthAlert = document.getElementById("healthAlert");
     elements.healthAlertHeading = document.getElementById("healthAlertHeading");
@@ -111,6 +119,32 @@
     elements.nextMonthButton = document.getElementById("nextMonthButton");
     elements.currentMonthButton = document.getElementById("currentMonthButton");
     elements.selectedDateLabel = document.getElementById("selectedDateLabel");
+    elements.printReportButton = document.getElementById("printReportButton");
+    elements.printReportPeriod = document.getElementById("printReportPeriod");
+    elements.printReportCreated = document.getElementById("printReportCreated");
+    elements.printProfileAge = document.getElementById("printProfileAge");
+    elements.printProfileHeight = document.getElementById("printProfileHeight");
+    elements.printProfileWeight = document.getElementById("printProfileWeight");
+    elements.printProfileBmi = document.getElementById("printProfileBmi");
+    elements.printMorningSys = document.getElementById("printMorningSys");
+    elements.printMorningDia = document.getElementById("printMorningDia");
+    elements.printNightSys = document.getElementById("printNightSys");
+    elements.printNightDia = document.getElementById("printNightDia");
+    elements.printMorningPulse = document.getElementById("printMorningPulse");
+    elements.printNightPulse = document.getElementById("printNightPulse");
+    elements.printTargetRate = document.getElementById("printTargetRate");
+    elements.printWeightChange = document.getElementById("printWeightChange");
+    elements.printUsualTemp = document.getElementById("printUsualTemp");
+    elements.printUsualTempNote = document.getElementById("printUsualTempNote");
+    elements.printTrend = document.getElementById("printTrend");
+    elements.printPulsePressure = document.getElementById("printPulsePressure");
+    elements.printAlertSection = document.getElementById("printAlertSection");
+    elements.printAlertMessages = document.getElementById("printAlertMessages");
+    elements.printBpChart = document.getElementById("printBpChart");
+    elements.printPulseChart = document.getElementById("printPulseChart");
+    elements.printWeightChartSection = document.getElementById("printWeightChartSection");
+    elements.printWeightChart = document.getElementById("printWeightChart");
+    elements.printRecordRows = document.getElementById("printRecordRows");
   }
 
   function setInitialValues() {
@@ -170,6 +204,7 @@
       changeCalendarMonth(1);
     });
     elements.currentMonthButton.addEventListener("click", showCurrentCalendarMonth);
+    elements.printReportButton.addEventListener("click", printAnalysisReport);
     for (var testIndex = 0; testIndex < elements.testScenarioButtons.length; testIndex += 1) {
       elements.testScenarioButtons[testIndex].addEventListener("click", loadTestScenario);
     }
@@ -424,8 +459,11 @@
       elements.periodSummary.textContent = "表示期間を入力してください。";
       return;
     }
+    var filtered = getFilteredRecords();
+    var days = countUniqueRecordDates(filtered);
     elements.periodSummary.textContent =
-      bounds.label + "：" + formatShortJapaneseDate(bounds.start) + " ～ " + formatShortJapaneseDate(bounds.end);
+      bounds.label + "：" + formatShortJapaneseDate(bounds.start) + " ～ " + formatShortJapaneseDate(bounds.end) +
+      "（記録" + days + "日・" + filtered.length + "回）";
   }
 
   function initializeStorage() {
@@ -1278,37 +1316,330 @@
     renderCharts(filtered);
   }
 
-  function renderAnalysis(filteredRecords) {
-    elements.analysisCount.textContent = filteredRecords.length + "回";
-    if (filteredRecords.length === 0) {
-      elements.analysisBp.textContent = "―";
-      elements.analysisPulse.textContent = "―";
-      elements.analysisWeight.textContent = "―";
-      elements.analysisTrend.textContent = "この期間には記録がありません。";
+  function printAnalysisReport() {
+    var filtered = getFilteredRecords();
+    if (filtered.length === 0) {
+      showToast("選択中の期間には印刷できる記録がありません。", "error", 5000);
       return;
     }
 
-    var avgSys = averageValue(filteredRecords, "sys");
-    var avgDia = averageValue(filteredRecords, "dia");
-    var avgPulse = averageValue(filteredRecords, "pulse");
-    elements.analysisBp.textContent = Math.round(avgSys) + " / " + Math.round(avgDia);
-    elements.analysisPulse.textContent = Math.round(avgPulse) + "回/分";
+    renderDashboard();
+    buildPrintReport(filtered);
+    waitForPrintImages(function () {
+      window.print();
+    });
+  }
 
+  function buildPrintReport(filteredRecords) {
+    var bounds = getPeriodBounds();
+    var chronological = filteredRecords.slice().reverse();
+    var morningRecords = filteredRecords.filter(function (record) {
+      return record.timing === "朝";
+    });
+    var nightRecords = filteredRecords.filter(function (record) {
+      return record.timing === "夜";
+    });
+    var now = new Date();
+    var summary = buildPeriodSummaryData(filteredRecords);
+
+    elements.printReportPeriod.textContent =
+      bounds.label + "：" + formatShortJapaneseDate(bounds.start) + " ～ " + formatShortJapaneseDate(bounds.end) +
+      "（記録" + summary.recordDays + "日・" + summary.recordCount + "回）";
+    elements.printReportCreated.textContent =
+      "作成：" + formatJapaneseDate(now) + " " + formatTime(now);
+
+    elements.printProfileAge.textContent = elements.profileAge.textContent;
+    elements.printProfileHeight.textContent = elements.profileHeight.textContent;
+    elements.printProfileWeight.textContent = elements.profileWeight.textContent;
+    elements.printProfileBmi.textContent = elements.profileBmi.textContent;
+
+    applyBpStack(elements.printMorningSys, elements.printMorningDia, summary.morningBp);
+    applyBpStack(elements.printNightSys, elements.printNightDia, summary.nightBp);
+    applyPulseStack(elements.printMorningPulse, elements.printNightPulse, summary.morningPulse, summary.nightPulse);
+    elements.printTargetRate.textContent = summary.targetRate;
+    elements.printWeightChange.textContent = summary.weightChange;
+    elements.printUsualTemp.textContent = summary.usualTemp;
+    elements.printUsualTempNote.textContent = summary.usualTempNote;
+
+    elements.printTrend.textContent = buildTrendText(chronological);
+    elements.printPulsePressure.textContent = buildPulsePressureText(morningRecords, nightRecords);
+
+    copyPrintAlertMessages(filteredRecords);
+    copyPrintCharts();
+    renderPrintRecordRows(chronological);
+  }
+
+  function buildPeriodSummaryData(filteredRecords) {
+    var morningRecords = filteredRecords.filter(function (record) {
+      return record.timing === "朝";
+    });
+    var nightRecords = filteredRecords.filter(function (record) {
+      return record.timing === "夜";
+    });
     var chronological = filteredRecords.slice().reverse();
     var weightRecords = chronological.filter(function (record) {
       return hasValue(record.weight);
     });
-    if (weightRecords.length === 0) {
-      elements.analysisWeight.textContent = "記録なし";
-    } else if (weightRecords.length === 1) {
-      elements.analysisWeight.textContent = formatOneDecimal(weightRecords[0].weight) + "kg";
-    } else {
-      var weightDifference = Number(weightRecords[weightRecords.length - 1].weight) - Number(weightRecords[0].weight);
-      var weightPrefix = weightDifference > 0 ? "+" : "";
-      elements.analysisWeight.textContent = weightPrefix + formatOneDecimal(weightDifference) + "kg";
+    var targetCount = filteredRecords.filter(function (record) {
+      return Number(record.sys) < 135 && Number(record.dia) < 85;
+    }).length;
+    var usualTemp = buildUsualTemperature(filteredRecords);
+
+    return {
+      recordDays: countUniqueRecordDates(filteredRecords),
+      recordCount: filteredRecords.length,
+      morningBp: averageBloodPressure(morningRecords),
+      nightBp: averageBloodPressure(nightRecords),
+      morningPulse: averageOptionalValue(morningRecords, "pulse"),
+      nightPulse: averageOptionalValue(nightRecords, "pulse"),
+      targetRate: filteredRecords.length
+        ? Math.round((targetCount / filteredRecords.length) * 100) + "%"
+        : "―",
+      weightChange: formatWeightChange(weightRecords),
+      usualTemp: usualTemp.value,
+      usualTempNote: usualTemp.note
+    };
+  }
+
+  function averageBloodPressure(recordList) {
+    if (!recordList.length) return null;
+    return {
+      sys: formatOneDecimal(averageValue(recordList, "sys")),
+      dia: formatOneDecimal(averageValue(recordList, "dia"))
+    };
+  }
+
+  function averageOptionalValue(recordList, key) {
+    if (!recordList.length) return null;
+    return formatOneDecimal(averageValue(recordList, key));
+  }
+
+  function applyBpStack(sysElement, diaElement, bp) {
+    setAlignedDecimal(sysElement, bp ? bp.sys : null);
+    setAlignedDecimal(diaElement, bp ? bp.dia : null);
+  }
+
+  function setAlignedDecimal(element, valueText) {
+    if (!element) return;
+    if (valueText === null || valueText === undefined || valueText === "") {
+      element.className = "bp-number is-empty";
+      element.innerHTML = '<span class="bp-int">―</span><span class="bp-dot"></span><span class="bp-frac"></span>';
+      return;
+    }
+    var parts = String(valueText).split(".");
+    element.className = "bp-number";
+    element.innerHTML =
+      '<span class="bp-int">' + parts[0] + "</span>" +
+      '<span class="bp-dot">.</span>' +
+      '<span class="bp-frac">' + (parts[1] || "0") + "</span>";
+  }
+
+  function applyPulseStack(morningElement, nightElement, morningPulse, nightPulse) {
+    morningElement.textContent = morningPulse === null ? "―" : morningPulse;
+    nightElement.textContent = nightPulse === null ? "―" : nightPulse;
+  }
+
+  function formatWeightChange(weightRecords) {
+    if (weightRecords.length === 0) return "記録なし";
+    if (weightRecords.length === 1) return formatOneDecimal(weightRecords[0].weight) + "kg";
+    var weightChange =
+      Number(weightRecords[weightRecords.length - 1].weight) - Number(weightRecords[0].weight);
+    return (weightChange > 0 ? "+" : "") + formatOneDecimal(weightChange) + "kg";
+  }
+
+  function buildUsualTemperature(filteredRecords) {
+    var temps = [];
+    for (var i = 0; i < filteredRecords.length; i += 1) {
+      if (filteredRecords[i].timing !== "朝") continue;
+      if (!hasValue(filteredRecords[i].temp)) continue;
+      var value = Number(filteredRecords[i].temp);
+      if (isFinite(value)) temps.push(value);
     }
 
-    elements.analysisTrend.textContent = buildTrendText(chronological);
+    if (!temps.length) {
+      return { value: "記録なし", note: "" };
+    }
+
+    var trimmed = trimmedMean(temps, 0.1);
+    return {
+      value: formatOneDecimal(trimmed.average) + "℃",
+      note: trimmed.trimmed
+        ? "上下各10%除外・朝" + temps.length + "回"
+        : "朝" + temps.length + "回の平均"
+    };
+  }
+
+  function trimmedMean(values, trimRatio) {
+    var sorted = values.slice().sort(function (a, b) {
+      return a - b;
+    });
+    var trimCount = sorted.length >= 10 ? Math.floor(sorted.length * trimRatio) : 0;
+    var usable = trimCount > 0
+      ? sorted.slice(trimCount, sorted.length - trimCount)
+      : sorted;
+    var total = 0;
+    for (var i = 0; i < usable.length; i += 1) {
+      total += usable[i];
+    }
+    return {
+      average: usable.length ? total / usable.length : 0,
+      trimmed: trimCount > 0
+    };
+  }
+
+  function buildPulsePressureText(morningRecords, nightRecords) {
+    var parts = [];
+    if (morningRecords.length) {
+      parts.push("朝 " + formatOneDecimal(averagePulsePressure(morningRecords)) + "mmHg");
+    }
+    if (nightRecords.length) {
+      parts.push("夜 " + formatOneDecimal(averagePulsePressure(nightRecords)) + "mmHg");
+    }
+    return parts.length ? "平均脈圧：" + parts.join(" ／ ") : "";
+  }
+
+  function averagePulsePressure(recordList) {
+    var total = 0;
+    for (var i = 0; i < recordList.length; i += 1) {
+      total += Number(recordList[i].sys) - Number(recordList[i].dia);
+    }
+    return recordList.length ? total / recordList.length : 0;
+  }
+
+  function copyPrintAlertMessages(filteredRecords) {
+    elements.printAlertMessages.innerHTML = "";
+    elements.printAlertSection.classList.remove("is-ok", "is-caution", "is-danger");
+
+    var dangerCount = 0;
+    var cautionCount = 0;
+    for (var i = 0; i < filteredRecords.length; i += 1) {
+      var level = getRecordAlertLevel(filteredRecords[i]);
+      if (level === "danger") dangerCount += 1;
+      else if (level === "caution") cautionCount += 1;
+    }
+
+    var severity = dangerCount ? "danger" : (cautionCount ? "caution" : "ok");
+    elements.printAlertSection.classList.add("is-" + severity);
+    appendPrintParagraph(
+      elements.printAlertMessages,
+      "期間内の確認表示：すぐ確認 " + dangerCount + "回、注意 " + cautionCount + "回。"
+    );
+
+    var messages = elements.healthAlertMessages.querySelectorAll(".health-alert-message");
+    for (var messageIndex = 0; messageIndex < messages.length; messageIndex += 1) {
+      appendPrintParagraph(elements.printAlertMessages, messages[messageIndex].textContent);
+    }
+  }
+
+  function appendPrintParagraph(parent, text) {
+    var paragraph = document.createElement("p");
+    paragraph.textContent = text;
+    parent.appendChild(paragraph);
+  }
+
+  function copyPrintCharts() {
+    if (!elements.bpChart.hidden) {
+      elements.printBpChart.src = elements.bpChart.toDataURL("image/png");
+    }
+    if (!elements.pulseChart.hidden) {
+      elements.printPulseChart.src = elements.pulseChart.toDataURL("image/png");
+    }
+
+    var hasWeightChart = !elements.weightChart.hidden;
+    elements.printWeightChartSection.hidden = !hasWeightChart;
+    if (hasWeightChart) {
+      elements.printWeightChart.src = elements.weightChart.toDataURL("image/png");
+    } else {
+      elements.printWeightChart.removeAttribute("src");
+    }
+  }
+
+  function waitForPrintImages(callback) {
+    var images = [elements.printBpChart, elements.printPulseChart];
+    if (!elements.printWeightChartSection.hidden) images.push(elements.printWeightChart);
+    var pending = 0;
+    var finished = false;
+
+    function complete() {
+      if (finished || pending > 0) return;
+      finished = true;
+      callback();
+    }
+
+    for (var i = 0; i < images.length; i += 1) {
+      if (images[i].complete && images[i].naturalWidth > 0) continue;
+      pending += 1;
+      images[i].addEventListener("load", function () {
+        pending -= 1;
+        complete();
+      }, { once: true });
+      images[i].addEventListener("error", function () {
+        pending -= 1;
+        complete();
+      }, { once: true });
+    }
+
+    complete();
+    setTimeout(function () {
+      if (finished) return;
+      finished = true;
+      callback();
+    }, 1200);
+  }
+
+  function renderPrintRecordRows(chronological) {
+    elements.printRecordRows.innerHTML = "";
+    for (var i = 0; i < chronological.length; i += 1) {
+      var record = chronological[i];
+      var row = document.createElement("tr");
+      var level = getRecordAlertLevel(record);
+      if (level) row.className = "is-" + level;
+
+      appendPrintCell(row, formatShortJapaneseDate(record.date));
+      appendPrintCell(row, record.timing);
+      appendPrintCell(row, record.sys + " / " + record.dia);
+      appendPrintCell(row, record.pulse + "回/分");
+      appendPrintCell(row, hasValue(record.weight) ? formatOneDecimal(record.weight) + "kg" : "―");
+      appendPrintCell(row, hasValue(record.temp) ? formatOneDecimal(record.temp) + "℃" : "―");
+      appendPrintCell(row, level === "danger" ? "すぐ確認" : (level === "caution" ? "注意" : "―"));
+      elements.printRecordRows.appendChild(row);
+    }
+  }
+
+  function appendPrintCell(row, text) {
+    var cell = document.createElement("td");
+    cell.textContent = text;
+    row.appendChild(cell);
+  }
+
+  function renderAnalysis(filteredRecords) {
+    var summary = buildPeriodSummaryData(filteredRecords);
+
+    if (filteredRecords.length === 0) {
+      applyBpStack(elements.analysisMorningSys, elements.analysisMorningDia, null);
+      applyBpStack(elements.analysisNightSys, elements.analysisNightDia, null);
+      applyPulseStack(elements.analysisMorningPulse, elements.analysisNightPulse, null, null);
+      elements.analysisTargetRate.textContent = "―";
+      elements.analysisWeight.textContent = "―";
+      elements.analysisUsualTemp.textContent = "―";
+      elements.analysisUsualTempNote.textContent = "";
+      elements.analysisTrend.textContent = "この期間には記録がありません。";
+      return;
+    }
+
+    applyBpStack(elements.analysisMorningSys, elements.analysisMorningDia, summary.morningBp);
+    applyBpStack(elements.analysisNightSys, elements.analysisNightDia, summary.nightBp);
+    applyPulseStack(
+      elements.analysisMorningPulse,
+      elements.analysisNightPulse,
+      summary.morningPulse,
+      summary.nightPulse
+    );
+    elements.analysisTargetRate.textContent = summary.targetRate;
+    elements.analysisWeight.textContent = summary.weightChange;
+    elements.analysisUsualTemp.textContent = summary.usualTemp;
+    elements.analysisUsualTempNote.textContent = summary.usualTempNote;
+    elements.analysisTrend.textContent = buildTrendText(filteredRecords.slice().reverse());
   }
 
   function buildTrendText(chronological) {
@@ -1424,15 +1755,38 @@
 
   function renderCharts(filteredRecords) {
     var chronological = (filteredRecords || getFilteredRecords()).slice().reverse();
-    drawLineChart(elements.bpChart, chronological, {
+    var dailyRecords = buildDailyChartRecords(chronological);
+
+    drawLineChart(elements.bpChart, dailyRecords, {
       datasets: [
-        { key: "sys", color: "#cf3030", label: "最高" },
-        { key: "dia", color: "#1769c2", label: "最低" },
-        { key: "pulse", color: "#a12a70", label: "脈拍" }
+        { key: "morningSys", color: "#e32626", label: "朝 最高" },
+        { key: "morningDia", color: "#f3a20a", label: "朝 最低", dash: [7, 4] },
+        { key: "nightSys", color: "#162d78", label: "夜 最高" },
+        { key: "nightDia", color: "#168a86", label: "夜 最低", dash: [7, 4] }
       ],
       fixedMin: 30,
-      minimumMax: 180
+      minimumMax: 150,
+      height: 285,
+      minimumPointGap: 29,
+      showEveryLabel: true,
+      dayNumberOnly: true,
+      referenceLines: [
+        { value: 135, color: "#d87979", dash: [3, 3] },
+        { value: 85, color: "#d2a44e", dash: [3, 3] }
+      ]
     }, elements.bpChartEmpty);
+
+    drawLineChart(elements.pulseChart, dailyRecords, {
+      datasets: [
+        { key: "morningPulse", color: "#2aa66a", label: "朝 脈拍" },
+        { key: "nightPulse", color: "#1b2f78", label: "夜 脈拍" }
+      ],
+      padding: 5,
+      height: 245,
+      minimumPointGap: 29,
+      showEveryLabel: true,
+      dayNumberOnly: true
+    }, elements.pulseChartEmpty);
 
     var weightRecords = chronological.filter(function (record) {
       return hasValue(record.weight);
@@ -1443,15 +1797,81 @@
     }, elements.weightChartEmpty);
   }
 
+  function buildDailyChartRecords(chronological) {
+    if (!chronological.length) return [];
+    var grouped = {};
+    var recordedDates = [];
+
+    for (var i = 0; i < chronological.length; i += 1) {
+      var record = chronological[i];
+      if (!grouped[record.date]) {
+        grouped[record.date] = {
+          date: record.date,
+          morning: { count: 0, sys: 0, dia: 0, pulse: 0 },
+          night: { count: 0, sys: 0, dia: 0, pulse: 0 }
+        };
+        recordedDates.push(record.date);
+      }
+      var bucket = record.timing === "夜" ? grouped[record.date].night : grouped[record.date].morning;
+      bucket.count += 1;
+      bucket.sys += Number(record.sys);
+      bucket.dia += Number(record.dia);
+      bucket.pulse += Number(record.pulse);
+    }
+
+    var dates = recordedDates;
+    var firstDate = new Date(recordedDates[0] + "T00:00:00");
+    var lastDate = new Date(recordedDates[recordedDates.length - 1] + "T00:00:00");
+    var spanDays = Math.round((lastDate.getTime() - firstDate.getTime()) / 86400000) + 1;
+    if (spanDays > 0 && spanDays <= 31) {
+      dates = [];
+      for (var dayIndex = 0; dayIndex < spanDays; dayIndex += 1) {
+        var date = new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate() + dayIndex);
+        dates.push(toLocalDateString(date));
+      }
+    }
+
+    return dates.map(function (dateText) {
+      var day = grouped[dateText] || {
+        date: dateText,
+        morning: { count: 0, sys: 0, dia: 0, pulse: 0 },
+        night: { count: 0, sys: 0, dia: 0, pulse: 0 }
+      };
+      var point = { date: dateText };
+      setDailyChartValues(point, "morning", day.morning);
+      setDailyChartValues(point, "night", day.night);
+      return point;
+    });
+  }
+
+  function setDailyChartValues(point, prefix, bucket) {
+    if (!bucket.count) {
+      point[prefix + "Sys"] = null;
+      point[prefix + "Dia"] = null;
+      point[prefix + "Pulse"] = null;
+      return;
+    }
+    point[prefix + "Sys"] = bucket.sys / bucket.count;
+    point[prefix + "Dia"] = bucket.dia / bucket.count;
+    point[prefix + "Pulse"] = bucket.pulse / bucket.count;
+  }
+
   function drawLineChart(canvas, chartRecords, options, emptyElement) {
     if (!canvas || !canvas.getContext) return;
-    var hasData = chartRecords.length > 0;
+    var hasData = chartRecords.some(function (record) {
+      return options.datasets.some(function (dataset) {
+        return hasValue(record[dataset.key]) && isFinite(Number(record[dataset.key]));
+      });
+    });
     canvas.hidden = !hasData;
     emptyElement.hidden = hasData;
     if (!hasData) return;
 
-    var cssWidth = Math.max(280, canvas.parentElement.clientWidth);
-    var cssHeight = canvas.id === "weightChart" ? 225 : 285;
+    var minimumChartWidth = options.minimumPointGap
+      ? chartRecords.length * options.minimumPointGap + 58
+      : 280;
+    var cssWidth = Math.max(280, canvas.parentElement.clientWidth, minimumChartWidth);
+    var cssHeight = options.height || (canvas.id === "weightChart" ? 225 : 285);
     var ratio = Math.min(window.devicePixelRatio || 1, 2);
     canvas.style.width = cssWidth + "px";
     canvas.style.height = cssHeight + "px";
@@ -1469,7 +1889,9 @@
 
     for (var d = 0; d < options.datasets.length; d += 1) {
       for (var r = 0; r < chartRecords.length; r += 1) {
-        var value = Number(chartRecords[r][options.datasets[d].key]);
+        var rawValue = chartRecords[r][options.datasets[d].key];
+        if (!hasValue(rawValue)) continue;
+        var value = Number(rawValue);
         if (isFinite(value)) values.push(value);
       }
     }
@@ -1502,6 +1924,24 @@
       context.fillText(String(labelValue), margin.left - 7, gridY);
     }
 
+    if (options.referenceLines) {
+      for (var referenceIndex = 0; referenceIndex < options.referenceLines.length; referenceIndex += 1) {
+        var reference = options.referenceLines[referenceIndex];
+        if (reference.value < minValue || reference.value > maxValue) continue;
+        var referenceY =
+          margin.top + ((maxValue - reference.value) / (maxValue - minValue)) * plotHeight;
+        context.save();
+        context.strokeStyle = reference.color;
+        context.lineWidth = 1.5;
+        context.setLineDash(reference.dash || [3, 3]);
+        context.beginPath();
+        context.moveTo(margin.left, referenceY);
+        context.lineTo(cssWidth - margin.right, referenceY);
+        context.stroke();
+        context.restore();
+      }
+    }
+
     var pointGap = chartRecords.length === 1 ? 0 : plotWidth / (chartRecords.length - 1);
     for (var datasetIndex = 0; datasetIndex < options.datasets.length; datasetIndex += 1) {
       var dataset = options.datasets[datasetIndex];
@@ -1510,20 +1950,34 @@
       context.lineWidth = 3;
       context.lineJoin = "round";
       context.lineCap = "round";
+      context.setLineDash(dataset.dash || []);
       context.beginPath();
+      var lineStarted = false;
 
       for (var recordIndex = 0; recordIndex < chartRecords.length; recordIndex += 1) {
+        var rawChartValue = chartRecords[recordIndex][dataset.key];
+        if (!hasValue(rawChartValue) || !isFinite(Number(rawChartValue))) {
+          lineStarted = false;
+          continue;
+        }
         var x = chartRecords.length === 1 ? margin.left + plotWidth / 2 : margin.left + pointGap * recordIndex;
-        var chartValue = Number(chartRecords[recordIndex][dataset.key]);
+        var chartValue = Number(rawChartValue);
         var y = margin.top + ((maxValue - chartValue) / (maxValue - minValue)) * plotHeight;
-        if (recordIndex === 0) context.moveTo(x, y);
-        else context.lineTo(x, y);
+        if (!lineStarted) {
+          context.moveTo(x, y);
+          lineStarted = true;
+        } else {
+          context.lineTo(x, y);
+        }
       }
       context.stroke();
+      context.setLineDash([]);
 
       for (var pointIndex = 0; pointIndex < chartRecords.length; pointIndex += 1) {
+        var rawPointValue = chartRecords[pointIndex][dataset.key];
+        if (!hasValue(rawPointValue) || !isFinite(Number(rawPointValue))) continue;
         var pointX = chartRecords.length === 1 ? margin.left + plotWidth / 2 : margin.left + pointGap * pointIndex;
-        var pointValue = Number(chartRecords[pointIndex][dataset.key]);
+        var pointValue = Number(rawPointValue);
         var pointY = margin.top + ((maxValue - pointValue) / (maxValue - minValue)) * plotHeight;
         context.beginPath();
         context.arc(pointX, pointY, 4, 0, Math.PI * 2);
@@ -1535,13 +1989,19 @@
     context.font = "bold 11px sans-serif";
     context.textAlign = "center";
     context.textBaseline = "top";
-    var labelStep = Math.max(1, Math.ceil(chartRecords.length / 7));
+    var labelStep = options.showEveryLabel && chartRecords.length <= 31
+      ? 1
+      : Math.max(1, Math.ceil(chartRecords.length / 7));
     for (var labelIndex = 0; labelIndex < chartRecords.length; labelIndex += labelStep) {
       var labelX = chartRecords.length === 1 ? margin.left + plotWidth / 2 : margin.left + pointGap * labelIndex;
-      var dateText = String(chartRecords[labelIndex].date || "").slice(5).replace("-", "/");
-      var timingText = getRecordTime(chartRecords[labelIndex]);
+      var fullDateText = String(chartRecords[labelIndex].date || "");
+      var dateText = options.dayNumberOnly
+        ? String(Number(fullDateText.slice(8, 10)))
+        : fullDateText.slice(5).replace("-", "/");
       context.fillText(dateText, labelX, cssHeight - margin.bottom + 8);
-      context.fillText(timingText, labelX, cssHeight - margin.bottom + 24);
+      if (!options.dayNumberOnly) {
+        context.fillText(getRecordTime(chartRecords[labelIndex]), labelX, cssHeight - margin.bottom + 24);
+      }
     }
   }
 

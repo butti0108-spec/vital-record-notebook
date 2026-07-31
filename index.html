@@ -8,8 +8,8 @@
   <title>バイタル記録ノート</title>
   <link rel="icon" href="app-icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=12">
-  <script src="app.js?v=12" defer></script>
+  <link rel="stylesheet" href="style.css?v=18">
+  <script src="app.js?v=16" defer></script>
 </head>
 <body>
   <header class="app-header">
@@ -55,6 +55,7 @@
           <li>1週間・1か月・1年・自由期間の切り替え</li>
           <li>平均値、変化傾向、通常・注意・緊急確認の表示</li>
           <li>血圧・脈拍・体重グラフ</li>
+          <li>分析レポートのPDF保存と印刷</li>
           <li>年齢、最新体重、BMIの自動計算</li>
           <li>CSVへの保存とCSVからの復元</li>
         </ul>
@@ -209,36 +210,76 @@
         <h3 id="analysisHeading">この期間のまとめ</h3>
         <div class="analysis-grid">
           <div>
-            <span>記録数</span>
-            <strong id="analysisCount">0回</strong>
+            <span>朝 平均血圧</span>
+            <div id="analysisMorningBp" class="bp-stack bp-pressure" aria-live="polite">
+              <strong class="bp-row"><small>上</small><span id="analysisMorningSys" class="bp-number">―</span></strong>
+              <strong class="bp-row"><small>下</small><span id="analysisMorningDia" class="bp-number">―</span></strong>
+            </div>
           </div>
           <div>
-            <span>平均血圧</span>
-            <strong id="analysisBp">―</strong>
+            <span>夜 平均血圧</span>
+            <div id="analysisNightBp" class="bp-stack bp-pressure" aria-live="polite">
+              <strong class="bp-row"><small>上</small><span id="analysisNightSys" class="bp-number">―</span></strong>
+              <strong class="bp-row"><small>下</small><span id="analysisNightDia" class="bp-number">―</span></strong>
+            </div>
           </div>
           <div>
             <span>平均脈拍</span>
-            <strong id="analysisPulse">―</strong>
+            <div id="analysisPulse" class="bp-stack" aria-live="polite">
+              <strong><small>朝</small> <span id="analysisMorningPulse">―</span></strong>
+              <strong><small>夜</small> <span id="analysisNightPulse">―</span></strong>
+            </div>
+          </div>
+          <div>
+            <span>目安の範囲内</span>
+            <strong id="analysisTargetRate">―</strong>
+            <small>135/85mmHg未満</small>
           </div>
           <div>
             <span>体重の変化</span>
             <strong id="analysisWeight">―</strong>
           </div>
+          <div>
+            <span>いつもの体温（目安）</span>
+            <strong id="analysisUsualTemp">―</strong>
+            <small id="analysisUsualTempNote"></small>
+          </div>
         </div>
         <p id="analysisTrend" class="analysis-trend">記録がたまると変化の傾向を表示します。</p>
       </section>
 
+      <section class="report-action-card" aria-labelledby="reportActionHeading">
+        <div>
+          <h3 id="reportActionHeading">分析結果を保存・印刷</h3>
+          <p>選択中の期間について、まとめ・グラフ・測定値一覧を1つのレポートにします。</p>
+        </div>
+        <button type="button" id="printReportButton">PDF保存・印刷へ</button>
+      </section>
+
       <section class="chart-card" aria-labelledby="bpChartHeading">
-        <h3 id="bpChartHeading">血圧・脈拍</h3>
+        <h3 id="bpChartHeading">血圧の推移</h3>
         <div class="chart-legend" aria-hidden="true">
-          <span><i class="legend-line sys"></i>最高</span>
-          <span><i class="legend-line dia"></i>最低</span>
-          <span><i class="legend-line pulse"></i>脈拍</span>
+          <span><i class="legend-line morning-sys"></i>朝 最高</span>
+          <span><i class="legend-line morning-dia"></i>朝 最低</span>
+          <span><i class="legend-line night-sys"></i>夜 最高</span>
+          <span><i class="legend-line night-dia"></i>夜 最低</span>
         </div>
         <div class="canvas-wrap">
-          <canvas id="bpChart" width="520" height="330" aria-label="血圧と脈拍の推移グラフ"></canvas>
+          <canvas id="bpChart" width="520" height="330" aria-label="朝と夜の血圧推移グラフ"></canvas>
         </div>
         <p id="bpChartEmpty" class="empty-chart" hidden>グラフに表示できる記録がありません。</p>
+      </section>
+
+      <section class="chart-card" aria-labelledby="pulseChartHeading">
+        <h3 id="pulseChartHeading">脈拍の推移</h3>
+        <div class="chart-legend" aria-hidden="true">
+          <span><i class="legend-line morning-pulse"></i>朝 脈拍</span>
+          <span><i class="legend-line night-pulse"></i>夜 脈拍</span>
+        </div>
+        <div class="canvas-wrap pulse">
+          <canvas id="pulseChart" width="520" height="280" aria-label="朝と夜の脈拍推移グラフ"></canvas>
+        </div>
+        <p id="pulseChartEmpty" class="empty-chart" hidden>グラフに表示できる記録がありません。</p>
       </section>
 
       <section class="chart-card" aria-labelledby="weightChartHeading">
@@ -341,6 +382,118 @@
       </button>
     </section>
   </main>
+
+  <section id="printReport" class="print-report">
+    <header class="print-report-header">
+      <div>
+        <p class="print-report-kicker">バイタル記録ノート</p>
+        <h1>バイタル測定結果レポート</h1>
+      </div>
+      <div class="print-report-meta">
+        <p id="printReportPeriod"></p>
+        <p id="printReportCreated"></p>
+      </div>
+    </header>
+
+    <section class="print-report-section">
+      <h2>基本情報</h2>
+      <div class="print-profile-grid">
+        <div><span>年齢</span><strong id="printProfileAge">未設定</strong></div>
+        <div><span>身長</span><strong id="printProfileHeight">未設定</strong></div>
+        <div><span>最新体重</span><strong id="printProfileWeight">記録なし</strong></div>
+        <div><span>BMI</span><strong id="printProfileBmi">―</strong></div>
+      </div>
+    </section>
+
+    <section class="print-report-section">
+      <h2>期間のまとめ</h2>
+      <div class="print-summary-grid">
+        <div>
+          <span>朝 平均血圧</span>
+          <div class="bp-stack bp-pressure">
+            <strong class="bp-row"><small>上</small><span id="printMorningSys" class="bp-number">―</span></strong>
+            <strong class="bp-row"><small>下</small><span id="printMorningDia" class="bp-number">―</span></strong>
+          </div>
+        </div>
+        <div>
+          <span>夜 平均血圧</span>
+          <div class="bp-stack bp-pressure">
+            <strong class="bp-row"><small>上</small><span id="printNightSys" class="bp-number">―</span></strong>
+            <strong class="bp-row"><small>下</small><span id="printNightDia" class="bp-number">―</span></strong>
+          </div>
+        </div>
+        <div>
+          <span>平均脈拍</span>
+          <div class="bp-stack">
+            <strong><small>朝</small> <span id="printMorningPulse">―</span></strong>
+            <strong><small>夜</small> <span id="printNightPulse">―</span></strong>
+          </div>
+        </div>
+        <div><span>目安の範囲内</span><strong id="printTargetRate">―</strong><small>135/85mmHg未満</small></div>
+        <div><span>体重の変化</span><strong id="printWeightChange">―</strong></div>
+        <div>
+          <span>いつもの体温（目安）</span>
+          <strong id="printUsualTemp">―</strong>
+          <small id="printUsualTempNote"></small>
+        </div>
+      </div>
+      <p id="printTrend" class="print-report-text"></p>
+      <p id="printPulsePressure" class="print-report-text"></p>
+    </section>
+
+    <section id="printAlertSection" class="print-report-section print-alert-section">
+      <h2>今回の確認</h2>
+      <div id="printAlertMessages"></div>
+    </section>
+
+    <section class="print-report-section print-chart-section">
+      <h2>血圧の推移</h2>
+      <div class="print-chart-legend">
+        <span><i class="legend-line morning-sys"></i>朝 最高血圧</span>
+        <span><i class="legend-line morning-dia"></i>朝 最低血圧</span>
+        <span><i class="legend-line night-sys"></i>夜 最高血圧</span>
+        <span><i class="legend-line night-dia"></i>夜 最低血圧</span>
+      </div>
+      <img id="printBpChart" alt="朝と夜の血圧推移グラフ">
+    </section>
+
+    <section class="print-report-section print-chart-section">
+      <h2>脈拍の推移</h2>
+      <div class="print-chart-legend">
+        <span><i class="legend-line morning-pulse"></i>朝 脈拍</span>
+        <span><i class="legend-line night-pulse"></i>夜 脈拍</span>
+      </div>
+      <img id="printPulseChart" alt="朝と夜の脈拍推移グラフ">
+    </section>
+
+    <section id="printWeightChartSection" class="print-report-section print-chart-section">
+      <h2>体重の推移</h2>
+      <img id="printWeightChart" alt="体重の推移グラフ">
+    </section>
+
+    <section class="print-report-section print-table-section">
+      <h2>測定値一覧</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>日付</th>
+            <th>朝・夜</th>
+            <th>血圧</th>
+            <th>脈拍</th>
+            <th>体重</th>
+            <th>体温</th>
+            <th>確認</th>
+          </tr>
+        </thead>
+        <tbody id="printRecordRows"></tbody>
+      </table>
+    </section>
+
+    <footer class="print-report-footer">
+      <p>このレポートは端末に保存された測定記録を自動集計したもので、診断を行うものではありません。体調に異変がある場合は、数値にかかわらず医療機関へ相談してください。</p>
+      <p>家庭血圧の参考：日本高血圧学会「高血圧管理・治療ガイドライン2025」</p>
+    </footer>
+  </section>
 
   <div id="statusToast" class="status-toast" role="status" aria-live="polite" hidden>
     <span id="statusIcon" aria-hidden="true">✓</span>
