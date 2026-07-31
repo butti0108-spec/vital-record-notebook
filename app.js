@@ -698,14 +698,14 @@
     if (elements.sys.value === "") {
       return { message: "最高血圧を入力してください。", element: elements.sys };
     }
-    if (sys < 40 || sys > 300) {
-      return { message: "最高血圧が入力できる範囲外です。40～300の範囲で入力してください。入力値：" + sys, element: elements.sys };
+    if (sys < 20 || sys > 280) {
+      return { message: "最高血圧が入力できる範囲外です。20～280の範囲で入力してください（HEM-1000表示範囲）。入力値：" + sys, element: elements.sys };
     }
     if (elements.dia.value === "") {
       return { message: "最低血圧を入力してください。", element: elements.dia };
     }
-    if (dia < 30 || dia > 200) {
-      return { message: "最低血圧が入力できる範囲外です。30～200の範囲で入力してください。入力値：" + dia, element: elements.dia };
+    if (dia < 20 || dia > 280) {
+      return { message: "最低血圧が入力できる範囲外です。20～280の範囲で入力してください（HEM-1000表示範囲）。入力値：" + dia, element: elements.dia };
     }
     if (dia >= sys) {
       return { message: "最低血圧が最高血圧以上になっています。最高・最低の入力欄をご確認ください。", element: elements.dia };
@@ -713,8 +713,8 @@
     if (elements.pulse.value === "") {
       return { message: "脈拍を入力してください。", element: elements.pulse };
     }
-    if (pulse < 20 || pulse > 250) {
-      return { message: "脈拍が入力できる範囲外です。20～250の範囲で入力してください。入力値：" + pulse, element: elements.pulse };
+    if (pulse < 40 || pulse > 180) {
+      return { message: "脈拍が入力できる範囲外です。40～180の範囲で入力してください（HEM-1000表示範囲）。入力値：" + pulse, element: elements.pulse };
     }
     if (timing === "朝" && weight !== null && (weight < 20 || weight > 200)) {
       return { message: "体重が入力できる範囲外です。20～200kgの範囲で入力してください。入力値：" + weight, element: elements.weight };
@@ -1184,9 +1184,9 @@
       var date = String(row[dateIndex] || "").trim();
       if (
         !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-        !isFinite(sys) || sys < 40 || sys > 300 ||
-        !isFinite(dia) || dia < 30 || dia > 200 || dia >= sys ||
-        !isFinite(pulse) || pulse < 20 || pulse > 250
+        !isFinite(sys) || sys < 20 || sys > 280 ||
+        !isFinite(dia) || dia < 20 || dia > 280 || dia >= sys ||
+        !isFinite(pulse) || pulse < 40 || pulse > 180
       ) {
         continue;
       }

@@ -9,7 +9,7 @@
   <link rel="icon" href="app-icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css?v=18">
-  <script src="app.js?v=16" defer></script>
+  <script src="app.js?v=19" defer></script>
 </head>
 <body>
   <header class="app-header">
@@ -87,7 +87,7 @@
               <div class="field-group">
                 <label for="sys">最高 <small>上の血圧</small></label>
                 <div class="number-input">
-                  <input type="number" id="sys" inputmode="numeric" min="40" max="300" placeholder="120" required>
+                  <input type="number" id="sys" inputmode="numeric" min="20" max="280" placeholder="120" required>
                   <span>mmHg</span>
                 </div>
               </div>
@@ -95,7 +95,7 @@
               <div class="field-group">
                 <label for="dia">最低 <small>下の血圧</small></label>
                 <div class="number-input">
-                  <input type="number" id="dia" inputmode="numeric" min="30" max="200" placeholder="80" required>
+                  <input type="number" id="dia" inputmode="numeric" min="20" max="280" placeholder="80" required>
                   <span>mmHg</span>
                 </div>
               </div>
@@ -105,7 +105,7 @@
           <div class="compact-section pulse-section">
             <h3><span class="heading-icon pink" aria-hidden="true">♪</span> 脈拍</h3>
             <div class="number-input">
-              <input type="number" id="pulse" inputmode="numeric" min="20" max="250" placeholder="70" aria-label="1分間の脈拍数" required>
+              <input type="number" id="pulse" inputmode="numeric" min="40" max="180" placeholder="70" aria-label="1分間の脈拍数" required>
               <span>回/分</span>
             </div>
           </div>
