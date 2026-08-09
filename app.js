@@ -9,6 +9,7 @@
   var records = [];
   var profile = { birthDate: "", height: null };
   var pendingDeleteId = null;
+  var pendingClearAll = false;
   var lastFocusedElement = null;
   var toastTimer = null;
   var pendingWarningSignature = "";
@@ -68,8 +69,11 @@
     elements.statusIcon = document.getElementById("statusIcon");
     elements.statusText = document.getElementById("statusText");
     elements.confirmDialog = document.getElementById("confirmDialog");
+    elements.dialogTitle = document.getElementById("dialogTitle");
+    elements.dialogMessage = document.getElementById("dialogMessage");
     elements.dialogCancel = document.getElementById("dialogCancel");
     elements.dialogConfirm = document.getElementById("dialogConfirm");
+    elements.clearAllButton = document.getElementById("clearAllButton");
     elements.bpChart = document.getElementById("bpChart");
     elements.pulseChart = document.getElementById("pulseChart");
     elements.weightChart = document.getElementById("weightChart");
@@ -186,6 +190,9 @@
     });
     elements.exportButton.addEventListener("click", exportCsv);
     elements.importFile.addEventListener("change", handleImport);
+    elements.clearAllButton.addEventListener("click", function () {
+      openClearAllDialog(elements.clearAllButton);
+    });
     elements.profileForm.addEventListener("submit", handleProfileSubmit);
     for (var periodIndex = 0; periodIndex < elements.periodButtons.length; periodIndex += 1) {
       elements.periodButtons[periodIndex].addEventListener("click", handlePeriodChange);
@@ -1016,7 +1023,31 @@
 
   function openDeleteDialog(id, sourceButton) {
     pendingDeleteId = id;
+    pendingClearAll = false;
     lastFocusedElement = sourceButton || document.activeElement;
+    elements.dialogTitle.textContent = "記録を削除しますか？";
+    elements.dialogMessage.textContent = "削除すると元に戻せません。";
+    elements.dialogConfirm.textContent = "削除する";
+    elements.confirmDialog.hidden = false;
+    document.body.style.overflow = "hidden";
+    elements.dialogCancel.focus();
+  }
+
+  function openClearAllDialog(sourceButton) {
+    if (!storageReady) {
+      showToast("いまは削除できません。", "error");
+      return;
+    }
+    if (records.length === 0 && !profile.birthDate && !hasValue(profile.height)) {
+      showToast("削除する記録はありません。", "info", 3500);
+      return;
+    }
+    pendingDeleteId = null;
+    pendingClearAll = true;
+    lastFocusedElement = sourceButton || document.activeElement;
+    elements.dialogTitle.textContent = "すべての記録を削除しますか？";
+    elements.dialogMessage.textContent = "記録と体の情報をすべて消します。削除すると元に戻せません。先にCSVへ保存しておくと安心です。";
+    elements.dialogConfirm.textContent = "すべて削除する";
     elements.confirmDialog.hidden = false;
     document.body.style.overflow = "hidden";
     elements.dialogCancel.focus();
@@ -1024,6 +1055,7 @@
 
   function closeDeleteDialog() {
     pendingDeleteId = null;
+    pendingClearAll = false;
     elements.confirmDialog.hidden = true;
     document.body.style.overflow = "";
     if (lastFocusedElement && document.body.contains(lastFocusedElement)) {
@@ -1032,7 +1064,14 @@
   }
 
   function confirmDelete() {
-    if (!pendingDeleteId || !storageReady) return;
+    if (!storageReady) return;
+
+    if (pendingClearAll) {
+      clearAllRecords();
+      return;
+    }
+
+    if (!pendingDeleteId) return;
 
     var id = pendingDeleteId;
     elements.dialogConfirm.disabled = true;
@@ -1046,6 +1085,39 @@
       if (elements.editingId.value === id) resetForm();
       loadRecords(function () {
         showToast("記録を削除しました。", "info", 3500);
+      });
+    } else {
+      elements.dialogConfirm.disabled = false;
+      closeDeleteDialog();
+      showToast("削除できませんでした。", "error");
+    }
+  }
+
+  function clearAllRecords() {
+    elements.dialogConfirm.disabled = true;
+    records = [];
+    profile = { birthDate: "", height: null };
+
+    try {
+      localStorage.removeItem(PROFILE_KEY);
+    } catch (error) {
+      elements.dialogConfirm.disabled = false;
+      closeDeleteDialog();
+      showToast("削除できませんでした。", "error");
+      return;
+    }
+
+    if (persistRecords()) {
+      elements.dialogConfirm.disabled = false;
+      closeDeleteDialog();
+      resetForm();
+      elements.birthDate.value = "";
+      elements.height.value = "";
+      elements.profileError.hidden = true;
+      elements.profileError.textContent = "";
+      renderProfile();
+      loadRecords(function () {
+        showToast("すべての記録を削除しました。", "info", 4200);
       });
     } else {
       elements.dialogConfirm.disabled = false;

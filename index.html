@@ -8,8 +8,8 @@
   <title>バイタル記録ノート</title>
   <link rel="icon" href="app-icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=18">
-  <script src="app.js?v=19" defer></script>
+  <link rel="stylesheet" href="style.css?v=19">
+  <script src="app.js?v=20" defer></script>
 </head>
 <body>
   <header class="app-header">
@@ -51,7 +51,7 @@
         <summary>確認項目を開く</summary>
         <ul>
           <li>保存、入力ミス警告、通常と異なる値の再確認</li>
-          <li>保存した記録の修正と削除</li>
+          <li>保存した記録の修正と削除、すべての記録の削除</li>
           <li>1週間・1か月・1年・自由期間の切り替え</li>
           <li>平均値、変化傾向、通常・注意・緊急確認の表示</li>
           <li>血圧・脈拍・体重グラフ</li>
@@ -374,6 +374,10 @@
             <input type="file" id="importFile" accept=".csv,text/csv" hidden>
           </div>
           <p class="backup-note">「CSVに保存」は月に1回程度行うと安心です。</p>
+          <button type="button" class="danger-button clear-all-button" id="clearAllButton">
+            すべての記録を削除
+          </button>
+          <p class="backup-clear-note">デモデータの確認後など、記録をまとめて消したいときに使います。削除前に確認があります。</p>
         </div>
       </details>
 
