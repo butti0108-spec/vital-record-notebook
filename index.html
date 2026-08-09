@@ -8,7 +8,7 @@
   <title>バイタル記録ノート</title>
   <link rel="icon" href="app-icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=19">
+  <link rel="stylesheet" href="style.css?v=20">
   <script src="app.js?v=20" defer></script>
 </head>
 <body>
@@ -374,10 +374,15 @@
             <input type="file" id="importFile" accept=".csv,text/csv" hidden>
           </div>
           <p class="backup-note">「CSVに保存」は月に1回程度行うと安心です。</p>
-          <button type="button" class="danger-button clear-all-button" id="clearAllButton">
-            すべての記録を削除
-          </button>
-          <p class="backup-clear-note">デモデータの確認後など、記録をまとめて消したいときに使います。削除前に確認があります。</p>
+          <details class="backup-danger-zone">
+            <summary>記録の削除が必要なとき</summary>
+            <div class="backup-danger-body">
+              <p class="backup-clear-note">デモ確認後など、記録をまとめて消すときだけ使います。通常の保存・復元では使いません。</p>
+              <button type="button" class="clear-all-button" id="clearAllButton">
+                すべての記録を削除…
+              </button>
+            </div>
+          </details>
         </div>
       </details>
 

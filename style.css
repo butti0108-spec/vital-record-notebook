@@ -1083,14 +1083,62 @@ input[type="date"]:focus {
   font-weight: 700;
 }
 
+.backup-danger-zone {
+  margin-top: 16px;
+  border-top: 1px dashed #c5d0dc;
+  padding-top: 12px;
+}
+
+.backup-danger-zone > summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.backup-danger-zone > summary::-webkit-details-marker {
+  display: none;
+}
+
+.backup-danger-zone > summary::before {
+  content: "▸ ";
+  color: #9aa8b8;
+}
+
+.backup-danger-zone[open] > summary::before {
+  content: "▾ ";
+}
+
+.backup-danger-body {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f7f8fa;
+  border: 1px solid #e2e7ee;
+}
+
 .clear-all-button {
   width: 100%;
-  margin-top: 14px;
-  font-size: 0.92rem;
+  margin-top: 10px;
+  min-height: 2.6rem;
+  border-radius: 10px;
+  border: 1px solid #c9a4a4;
+  background: #fff;
+  color: #8a4b4b;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.clear-all-button:active {
+  background: #f8eeee;
 }
 
 .backup-clear-note {
-  margin: 8px 0 0;
+  margin: 0;
   color: var(--muted);
   font-size: 0.85rem;
   line-height: 1.55;
