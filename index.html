@@ -9,7 +9,7 @@
   <link rel="icon" href="app-icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css?v=20">
-  <script src="app.js?v=20" defer></script>
+  <script src="app.js?v=21" defer></script>
 </head>
 <body>
   <header class="app-header">
@@ -39,28 +39,28 @@
 
   <main class="app-main">
     <section id="testModePanel" class="test-mode-panel" aria-labelledby="testModeHeading" hidden>
-      <h2 id="testModeHeading">運用検証モード</h2>
-      <p>ここで作った記録は本番データと完全に分けて保存されます。</p>
+      <h2 id="testModeHeading">お試しモード（見本データで表示中）</h2>
+      <p>お試し用の記録は、自分の記録とは分けて保存されます。ここで消したり変えたりしても、自分の記録には影響しません。</p>
       <div class="test-scenario-buttons">
-        <button type="button" data-test-scenario="normal">通常データ</button>
-        <button type="button" data-test-scenario="caution">注意データ</button>
-        <button type="button" data-test-scenario="danger">緊急確認データ</button>
-        <button type="button" data-test-scenario="empty">空にする</button>
+        <button type="button" data-test-scenario="normal">普通の数値の見本</button>
+        <button type="button" data-test-scenario="caution">注意が必要な数値の見本</button>
+        <button type="button" data-test-scenario="danger">すぐに確認が必要な数値の見本</button>
+        <button type="button" data-test-scenario="empty">お試し用の記録をすべて消す</button>
       </div>
       <details class="test-checklist">
         <summary>確認項目を開く</summary>
         <ul>
           <li>保存、入力ミス警告、通常と異なる値の再確認</li>
-          <li>保存した記録の修正と削除、すべての記録の削除</li>
-          <li>1週間・1か月・1年・自由期間の切り替え</li>
+          <li>保存した記録の修正と削除、記録をすべて削除する操作</li>
+          <li>1週間・1か月・1年・期間を自分で指定の切り替え</li>
           <li>平均値、変化傾向、通常・注意・緊急確認の表示</li>
           <li>血圧・脈拍・体重グラフ</li>
-          <li>分析レポートのPDF保存と印刷</li>
+          <li>記録をPDFで保存・印刷する機能</li>
           <li>年齢、最新体重、BMIの自動計算</li>
-          <li>CSVへの保存とCSVからの復元</li>
+          <li>記録をファイルに保存する・保存したファイルから戻す機能</li>
         </ul>
       </details>
-      <a class="test-exit-link" href="./">通常画面に戻る</a>
+      <a class="test-exit-link" href="./">自分の記録の画面に戻る</a>
     </section>
 
     <section id="recordView" class="view-panel" aria-labelledby="recordHeading">
@@ -183,7 +183,7 @@
           <button type="button" data-period="week">1週間</button>
           <button type="button" data-period="month" class="is-active">1か月</button>
           <button type="button" data-period="year">1年</button>
-          <button type="button" data-period="custom">自由</button>
+          <button type="button" data-period="custom">期間を自分で指定</button>
         </div>
         <div id="customPeriod" class="custom-period" hidden>
           <div>
@@ -253,7 +253,7 @@
           <h3 id="reportActionHeading">分析結果を保存・印刷</h3>
           <p>選択中の期間について、まとめ・グラフ・測定値一覧を1つのレポートにします。</p>
         </div>
-        <button type="button" id="printReportButton">PDF保存・印刷へ</button>
+        <button type="button" id="printReportButton">記録をPDFで保存・印刷する</button>
       </section>
 
       <section class="chart-card" aria-labelledby="bpChartHeading">
@@ -366,25 +366,27 @@
           <p>スマホの故障や買い替えに備えて、記録をファイルに保存できます。</p>
           <div class="backup-actions">
             <button type="button" class="backup-button" id="exportButton">
-              <span aria-hidden="true">↓</span> CSVに保存
+              <span aria-hidden="true">↓</span> 記録をファイルに保存する
             </button>
             <label class="backup-button import-button" for="importFile">
-              <span aria-hidden="true">↑</span> CSVから戻す
+              <span aria-hidden="true">↑</span> 保存したファイルから記録を戻す
             </label>
             <input type="file" id="importFile" accept=".csv,text/csv" hidden>
           </div>
-          <p class="backup-note">「CSVに保存」は月に1回程度行うと安心です。</p>
+          <p class="backup-note">ファイルへの保存は月に1回程度行うと安心です。保存形式はCSVです。</p>
           <details class="backup-danger-zone">
             <summary>記録の削除が必要なとき</summary>
             <div class="backup-danger-body">
               <p class="backup-clear-note">デモ確認後など、記録をまとめて消すときだけ使います。通常の保存・復元では使いません。</p>
               <button type="button" class="clear-all-button" id="clearAllButton">
-                すべての記録を削除…
+                保存した記録をすべて削除する
               </button>
             </div>
           </details>
         </div>
       </details>
+
+      <p class="backup-note" id="testModeEntry" style="margin:12px 0 4px"><a href="./?test=1">お試し用の画面を開く</a>（見本データで試せます。自分の記録とは別に保存されます）</p>
 
       <button type="button" class="primary-button back-to-form" id="backToFormButton">
         入力画面に戻る

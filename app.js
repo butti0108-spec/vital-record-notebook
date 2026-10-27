@@ -248,8 +248,10 @@
 
   function setupTestMode() {
     elements.testModePanel.hidden = !TEST_MODE;
+    var testModeEntry = document.getElementById("testModeEntry");
+    if (testModeEntry) testModeEntry.hidden = TEST_MODE;
     if (!TEST_MODE) return;
-    document.title = "【運用検証】バイタル記録ノート";
+    document.title = "【お試し】バイタル記録ノート";
   }
 
   function loadViewPreference() {
@@ -304,26 +306,26 @@
     var scenario = event.currentTarget.getAttribute("data-test-scenario");
 
     if (scenario === "empty") {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(PROFILE_KEY);
-    } else {
-      var mockRecords = createMockRecords(scenario);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(mockRecords));
-      localStorage.setItem(PROFILE_KEY, JSON.stringify({
-        birthDate: "1950-08-01",
-        height: 150
-      }));
+      openClearAllDialog(event.currentTarget);
+      return;
     }
+
+    var mockRecords = createMockRecords(scenario);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockRecords));
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({
+      birthDate: "1950-08-01",
+      height: 150
+    }));
 
     resetForm();
     loadProfile();
     loadRecords(function () {
       switchView("chart");
       var scenarioName =
-        scenario === "normal" ? "通常データ" :
-        scenario === "caution" ? "注意データ" :
-        scenario === "danger" ? "緊急確認データ" : "空の状態";
-      showToast(scenarioName + "に切り替えました。", "success", 4200);
+        scenario === "normal" ? "普通の数値の見本" :
+        scenario === "caution" ? "注意が必要な数値の見本" :
+        "すぐに確認が必要な数値の見本";
+      showToast(scenarioName + "を表示しています。", "success", 4200);
     });
   }
 
@@ -1045,8 +1047,8 @@
     pendingDeleteId = null;
     pendingClearAll = true;
     lastFocusedElement = sourceButton || document.activeElement;
-    elements.dialogTitle.textContent = "すべての記録を削除しますか？";
-    elements.dialogMessage.textContent = "記録と体の情報をすべて消します。削除すると元に戻せません。先にCSVへ保存しておくと安心です。";
+    elements.dialogTitle.textContent = TEST_MODE ? "お試し用の記録をすべて削除しますか？" : "保存した記録をすべて削除しますか？";
+    elements.dialogMessage.textContent = TEST_MODE ? "お試し用の記録と体の情報をすべて消します。自分の記録には影響しません。削除すると元に戻せません。" : "記録と体の情報をすべて消します。削除すると元に戻せません。先にファイルへ保存しておくと安心です。";
     elements.dialogConfirm.textContent = "すべて削除する";
     elements.confirmDialog.hidden = false;
     document.body.style.overflow = "hidden";
@@ -1117,7 +1119,7 @@
       elements.profileError.textContent = "";
       renderProfile();
       loadRecords(function () {
-        showToast("すべての記録を削除しました。", "info", 4200);
+        showToast(TEST_MODE ? "お試し用の記録をすべて削除しました。" : "保存した記録をすべて削除しました。", "info", 4200);
       });
     } else {
       elements.dialogConfirm.disabled = false;
