@@ -8,8 +8,19 @@
   <title>バイタル記録ノート</title>
   <link rel="icon" href="app-icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=20">
-  <script src="app.js?v=21" defer></script>
+  <link rel="stylesheet" href="style.css?v=21">
+  <script src="app.js?v=22" defer></script>
+  <script>
+    // 保存済みの文字の大きさを、画面が表示される前に反映します。
+    try {
+      var savedFontSize = window.localStorage.getItem("vital-record-notebook-font-size");
+      if (["small", "medium-small", "medium-large", "large"].indexOf(savedFontSize) >= 0) {
+        document.documentElement.setAttribute("data-font-size", savedFontSize);
+      }
+    } catch (error) {
+      // 保存が使えない環境では、標準の大きさで表示します。
+    }
+  </script>
 </head>
 <body>
   <header class="app-header">
@@ -385,6 +396,23 @@
               </button>
             </div>
           </details>
+        </div>
+      </details>
+
+      <details class="fontsize-card">
+        <summary>
+          <span>文字の大きさ</span>
+          <span id="fontSizeSummary" class="summary-state">標準</span>
+        </summary>
+        <div class="fontsize-body">
+          <p>画面の文字の大きさを変えられます。選んだ大きさは、この端末に保存されます。</p>
+          <div class="fontsize-options" role="group" aria-label="文字の大きさの選択">
+            <button type="button" class="fontsize-button" data-font-size-value="small" aria-pressed="false">小さい</button>
+            <button type="button" class="fontsize-button" data-font-size-value="medium-small" aria-pressed="false">少し小さい</button>
+            <button type="button" class="fontsize-button is-active" data-font-size-value="standard" aria-pressed="true">標準</button>
+            <button type="button" class="fontsize-button" data-font-size-value="medium-large" aria-pressed="false">少し大きい</button>
+            <button type="button" class="fontsize-button" data-font-size-value="large" aria-pressed="false">大きい</button>
+          </div>
         </div>
       </details>
 

@@ -25,6 +25,23 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* 文字の大きさ設定（標準は data-font-size 属性なし＝上の基本サイズ） */
+html[data-font-size="small"] {
+  font-size: 16px;
+}
+
+html[data-font-size="medium-small"] {
+  font-size: 17px;
+}
+
+html[data-font-size="medium-large"] {
+  font-size: 20px;
+}
+
+html[data-font-size="large"] {
+  font-size: 22px;
+}
+
 body {
   margin: 0;
   min-width: 280px;
@@ -197,6 +214,7 @@ input:focus,
 .history-section,
 .profile-card,
 .backup-card,
+.fontsize-card,
 .guideline-card,
 .chart-card,
 .chart-intro {
@@ -717,6 +735,7 @@ input[type="date"]:focus {
 
 .profile-card,
 .backup-card,
+.fontsize-card,
 .guideline-card {
   margin-top: 18px;
   padding: 0;
@@ -886,6 +905,7 @@ input[type="date"]:focus {
 
 .profile-card summary,
 .guideline-card summary,
+.fontsize-card summary,
 .backup-card summary {
   display: flex;
   min-height: 58px;
@@ -901,6 +921,7 @@ input[type="date"]:focus {
 
 .profile-card summary::-webkit-details-marker,
 .guideline-card summary::-webkit-details-marker,
+.fontsize-card summary::-webkit-details-marker,
 .backup-card summary::-webkit-details-marker {
   display: none;
 }
@@ -1055,6 +1076,61 @@ input[type="date"]:focus {
   margin: 8px 0 0;
   color: var(--muted);
   font-size: 0.89rem;
+}
+
+.fontsize-body {
+  padding: 0 16px 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.fontsize-body > p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.89rem;
+}
+
+.fontsize-options {
+  display: grid;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.fontsize-button {
+  min-height: 54px;
+  padding: 10px 14px;
+  border: 2px solid #80a9d7;
+  border-radius: 13px;
+  background: #eef6ff;
+  color: var(--blue-dark);
+  cursor: pointer;
+}
+
+/* 各ボタンの文字は、その段階の大きさの見本として表示します */
+.fontsize-button[data-font-size-value="small"] {
+  font-size: 0.89rem;
+}
+
+.fontsize-button[data-font-size-value="medium-small"] {
+  font-size: 0.94rem;
+}
+
+.fontsize-button[data-font-size-value="standard"] {
+  font-size: 1rem;
+}
+
+.fontsize-button[data-font-size-value="medium-large"] {
+  font-size: 1.11rem;
+}
+
+.fontsize-button[data-font-size-value="large"] {
+  font-size: 1.22rem;
+}
+
+.fontsize-button.is-active {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+  font-weight: 900;
 }
 
 .backup-actions {

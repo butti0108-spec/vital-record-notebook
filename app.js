@@ -5,6 +5,16 @@
   var STORAGE_KEY = "vital-record-notebook-records" + (TEST_MODE ? "-test" : "");
   var PROFILE_KEY = "vital-record-notebook-profile" + (TEST_MODE ? "-test" : "");
   var VIEW_MODE_KEY = "vital-record-notebook-view-mode" + (TEST_MODE ? "-test" : "");
+  // 文字の大きさは端末ごとの表示設定なので、お試しモードでも共通のキーを使います。
+  var FONT_SIZE_KEY = "vital-record-notebook-font-size";
+  var FONT_SIZE_STEPS = [
+    { id: "small", label: "小さい" },
+    { id: "medium-small", label: "少し小さい" },
+    { id: "standard", label: "標準" },
+    { id: "medium-large", label: "少し大きい" },
+    { id: "large", label: "大きい" }
+  ];
+  var activeFontSize = "standard";
   var storageReady = false;
   var records = [];
   var profile = { birthDate: "", height: null };
@@ -25,6 +35,7 @@
 
   function init() {
     cacheElements();
+    applyFontSize(loadFontSize());
     setupTestMode();
     setInitialValues();
     bindEvents();
@@ -89,6 +100,8 @@
     elements.profileHeight = document.getElementById("profileHeight");
     elements.profileWeight = document.getElementById("profileWeight");
     elements.profileBmi = document.getElementById("profileBmi");
+    elements.fontSizeSummary = document.getElementById("fontSizeSummary");
+    elements.fontSizeButtons = document.querySelectorAll("[data-font-size-value]");
     elements.periodButtons = document.querySelectorAll("[data-period]");
     elements.customPeriod = document.getElementById("customPeriod");
     elements.periodStart = document.getElementById("periodStart");
@@ -194,6 +207,9 @@
       openClearAllDialog(elements.clearAllButton);
     });
     elements.profileForm.addEventListener("submit", handleProfileSubmit);
+    for (var fontSizeIndex = 0; fontSizeIndex < elements.fontSizeButtons.length; fontSizeIndex += 1) {
+      elements.fontSizeButtons[fontSizeIndex].addEventListener("click", handleFontSizeChange);
+    }
     for (var periodIndex = 0; periodIndex < elements.periodButtons.length; periodIndex += 1) {
       elements.periodButtons[periodIndex].addEventListener("click", handlePeriodChange);
     }
@@ -389,6 +405,50 @@
       createdAt: date + "T" + time + ":00",
       updatedAt: null
     };
+  }
+
+  function loadFontSize() {
+    try {
+      var saved = window.localStorage.getItem(FONT_SIZE_KEY);
+      for (var i = 0; i < FONT_SIZE_STEPS.length; i += 1) {
+        if (FONT_SIZE_STEPS[i].id === saved) return saved;
+      }
+    } catch (error) {
+      // 保存が使えない環境では、標準の大きさを使います。
+    }
+    return "standard";
+  }
+
+  function saveFontSize() {
+    try {
+      window.localStorage.setItem(FONT_SIZE_KEY, activeFontSize);
+    } catch (error) {
+      // 保存できない場合でも、今回の表示には反映します。
+    }
+  }
+
+  function applyFontSize(sizeId) {
+    activeFontSize = sizeId;
+    if (sizeId === "standard") {
+      document.documentElement.removeAttribute("data-font-size");
+    } else {
+      document.documentElement.setAttribute("data-font-size", sizeId);
+    }
+    var label = "標準";
+    for (var i = 0; i < FONT_SIZE_STEPS.length; i += 1) {
+      if (FONT_SIZE_STEPS[i].id === sizeId) label = FONT_SIZE_STEPS[i].label;
+    }
+    for (var j = 0; j < elements.fontSizeButtons.length; j += 1) {
+      var isActive = elements.fontSizeButtons[j].getAttribute("data-font-size-value") === sizeId;
+      elements.fontSizeButtons[j].classList.toggle("is-active", isActive);
+      elements.fontSizeButtons[j].setAttribute("aria-pressed", String(isActive));
+    }
+    if (elements.fontSizeSummary) elements.fontSizeSummary.textContent = label;
+  }
+
+  function handleFontSizeChange(event) {
+    applyFontSize(event.currentTarget.getAttribute("data-font-size-value") || "standard");
+    saveFontSize();
   }
 
   function handlePeriodChange(event) {
