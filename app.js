@@ -11,10 +11,7 @@
   var THEME_KEY = "vital-record-notebook-theme";
   var THEME_STEPS = [
     { id: "white", label: "白" },
-    { id: "black", label: "黒" },
-    { id: "red", label: "赤" },
-    { id: "blue", label: "青" },
-    { id: "green", label: "緑" }
+    { id: "black", label: "黒" }
   ];
   var activeTheme = "white";
   var FONT_SIZE_STEPS = [

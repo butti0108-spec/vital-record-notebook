@@ -8,8 +8,8 @@
   <title>バイタル記録ノート</title>
   <link rel="icon" href="app-icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=22">
-  <script src="app.js?v=23" defer></script>
+  <link rel="stylesheet" href="style.css?v=23">
+  <script src="app.js?v=24" defer></script>
   <script>
     // 保存済みの文字の大きさを、画面が表示される前に反映します。
     try {
@@ -18,7 +18,7 @@
         document.documentElement.setAttribute("data-font-size", savedFontSize);
       }
       var savedTheme = window.localStorage.getItem("vital-record-notebook-theme");
-      if (["black", "red", "blue", "green"].indexOf(savedTheme) >= 0) {
+      if (["black"].indexOf(savedTheme) >= 0) {
         document.documentElement.setAttribute("data-theme", savedTheme);
       }
     } catch (error) {
@@ -426,13 +426,10 @@
           <span id="themeSummary" class="summary-state">白</span>
         </summary>
         <div class="fontsize-body">
-          <p>画面の色を変えられます。選んだ色は、この端末に保存されます。黒は、夜でも見やすく、電池の持ちにもよい色です。</p>
+          <p>画面の明るさを、白と黒から選べます。選んだ色は、この端末に保存されます。黒は、夜でも見やすく、電池の持ちにもよい色です。</p>
           <div class="fontsize-options" role="group" aria-label="画面の色の選択">
             <button type="button" class="fontsize-button is-active" data-theme-value="white" aria-pressed="true">白</button>
             <button type="button" class="fontsize-button" data-theme-value="black" aria-pressed="false">黒</button>
-            <button type="button" class="fontsize-button" data-theme-value="red" aria-pressed="false">赤</button>
-            <button type="button" class="fontsize-button" data-theme-value="blue" aria-pressed="false">青</button>
-            <button type="button" class="fontsize-button" data-theme-value="green" aria-pressed="false">緑</button>
           </div>
         </div>
       </details>

@@ -2447,18 +2447,3 @@ html[data-theme="black"] {
   --orange-light: #38301c;
   --shadow: 0 5px 18px rgba(0, 0, 0, 0.4);
 }
-html[data-theme="red"] {
-  --blue: #b03a2e;
-  --blue-dark: #8c2b21;
-  --blue-light: #fbeae7;
-}
-html[data-theme="blue"] {
-  --blue: #1d6fd1;
-  --blue-dark: #155aab;
-  --blue-light: #e3f0fd;
-}
-html[data-theme="green"] {
-  --blue: #18764b;
-  --blue-dark: #0f5a38;
-  --blue-light: #e7f6ed;
-}
