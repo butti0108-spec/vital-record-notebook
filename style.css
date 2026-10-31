@@ -2087,6 +2087,22 @@ canvas {
 }
 
 @media print {
+  html[data-theme] {
+    --blue: #1759a7;
+    --blue-dark: #0d417f;
+    --blue-light: #e9f2ff;
+    --text: #172033;
+    --muted: #526174;
+    --line: #cbd5e1;
+    --surface: #ffffff;
+    --background: #eef3f8;
+    --red: #c62828;
+    --red-light: #ffebee;
+    --green: #18764b;
+    --green-light: #e7f6ed;
+    --orange-light: #fff8df;
+  }
+
   html,
   body {
     width: auto;
@@ -2412,4 +2428,37 @@ canvas {
   .print-report-footer p {
     margin: 1mm 0 0;
   }
+}
+
+/* 画面の色（テーマ） */
+html[data-theme="black"] {
+  --blue: #5b8fd6;
+  --blue-dark: #8fb4e8;
+  --blue-light: #1d2735;
+  --text: #e8ecf2;
+  --muted: #9aa7ba;
+  --line: #3a4356;
+  --surface: #1b1f27;
+  --background: #101216;
+  --red: #ff8a80;
+  --red-light: #3a2326;
+  --green: #7bd8a8;
+  --green-light: #1e3329;
+  --orange-light: #38301c;
+  --shadow: 0 5px 18px rgba(0, 0, 0, 0.4);
+}
+html[data-theme="red"] {
+  --blue: #b03a2e;
+  --blue-dark: #8c2b21;
+  --blue-light: #fbeae7;
+}
+html[data-theme="blue"] {
+  --blue: #1d6fd1;
+  --blue-dark: #155aab;
+  --blue-light: #e3f0fd;
+}
+html[data-theme="green"] {
+  --blue: #18764b;
+  --blue-dark: #0f5a38;
+  --blue-light: #e7f6ed;
 }

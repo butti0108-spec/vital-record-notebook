@@ -8,14 +8,18 @@
   <title>バイタル記録ノート</title>
   <link rel="icon" href="app-icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=21">
-  <script src="app.js?v=22" defer></script>
+  <link rel="stylesheet" href="style.css?v=22">
+  <script src="app.js?v=23" defer></script>
   <script>
     // 保存済みの文字の大きさを、画面が表示される前に反映します。
     try {
       var savedFontSize = window.localStorage.getItem("vital-record-notebook-font-size");
       if (["small", "medium-small", "medium-large", "large"].indexOf(savedFontSize) >= 0) {
         document.documentElement.setAttribute("data-font-size", savedFontSize);
+      }
+      var savedTheme = window.localStorage.getItem("vital-record-notebook-theme");
+      if (["black", "red", "blue", "green"].indexOf(savedTheme) >= 0) {
+        document.documentElement.setAttribute("data-theme", savedTheme);
       }
     } catch (error) {
       // 保存が使えない環境では、標準の大きさで表示します。
@@ -412,6 +416,23 @@
             <button type="button" class="fontsize-button is-active" data-font-size-value="standard" aria-pressed="true">標準</button>
             <button type="button" class="fontsize-button" data-font-size-value="medium-large" aria-pressed="false">少し大きい</button>
             <button type="button" class="fontsize-button" data-font-size-value="large" aria-pressed="false">大きい</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="fontsize-card">
+        <summary>
+          <span>画面の色</span>
+          <span id="themeSummary" class="summary-state">白</span>
+        </summary>
+        <div class="fontsize-body">
+          <p>画面の色を変えられます。選んだ色は、この端末に保存されます。黒は、夜でも見やすく、電池の持ちにもよい色です。</p>
+          <div class="fontsize-options" role="group" aria-label="画面の色の選択">
+            <button type="button" class="fontsize-button is-active" data-theme-value="white" aria-pressed="true">白</button>
+            <button type="button" class="fontsize-button" data-theme-value="black" aria-pressed="false">黒</button>
+            <button type="button" class="fontsize-button" data-theme-value="red" aria-pressed="false">赤</button>
+            <button type="button" class="fontsize-button" data-theme-value="blue" aria-pressed="false">青</button>
+            <button type="button" class="fontsize-button" data-theme-value="green" aria-pressed="false">緑</button>
           </div>
         </div>
       </details>

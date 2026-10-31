@@ -7,6 +7,16 @@
   var VIEW_MODE_KEY = "vital-record-notebook-view-mode" + (TEST_MODE ? "-test" : "");
   // 文字の大きさは端末ごとの表示設定なので、お試しモードでも共通のキーを使います。
   var FONT_SIZE_KEY = "vital-record-notebook-font-size";
+  // 画面の色も、文字の大きさと同じく端末ごとの表示設定として共通のキーを使います。
+  var THEME_KEY = "vital-record-notebook-theme";
+  var THEME_STEPS = [
+    { id: "white", label: "白" },
+    { id: "black", label: "黒" },
+    { id: "red", label: "赤" },
+    { id: "blue", label: "青" },
+    { id: "green", label: "緑" }
+  ];
+  var activeTheme = "white";
   var FONT_SIZE_STEPS = [
     { id: "small", label: "小さい" },
     { id: "medium-small", label: "少し小さい" },
@@ -36,6 +46,7 @@
   function init() {
     cacheElements();
     applyFontSize(loadFontSize());
+    applyTheme(loadTheme());
     setupTestMode();
     setInitialValues();
     bindEvents();
@@ -102,6 +113,8 @@
     elements.profileBmi = document.getElementById("profileBmi");
     elements.fontSizeSummary = document.getElementById("fontSizeSummary");
     elements.fontSizeButtons = document.querySelectorAll("[data-font-size-value]");
+    elements.themeSummary = document.getElementById("themeSummary");
+    elements.themeButtons = document.querySelectorAll("[data-theme-value]");
     elements.periodButtons = document.querySelectorAll("[data-period]");
     elements.customPeriod = document.getElementById("customPeriod");
     elements.periodStart = document.getElementById("periodStart");
@@ -209,6 +222,9 @@
     elements.profileForm.addEventListener("submit", handleProfileSubmit);
     for (var fontSizeIndex = 0; fontSizeIndex < elements.fontSizeButtons.length; fontSizeIndex += 1) {
       elements.fontSizeButtons[fontSizeIndex].addEventListener("click", handleFontSizeChange);
+    }
+    for (var themeIndex = 0; themeIndex < elements.themeButtons.length; themeIndex += 1) {
+      elements.themeButtons[themeIndex].addEventListener("click", handleThemeChange);
     }
     for (var periodIndex = 0; periodIndex < elements.periodButtons.length; periodIndex += 1) {
       elements.periodButtons[periodIndex].addEventListener("click", handlePeriodChange);
@@ -449,6 +465,50 @@
   function handleFontSizeChange(event) {
     applyFontSize(event.currentTarget.getAttribute("data-font-size-value") || "standard");
     saveFontSize();
+  }
+
+  function loadTheme() {
+    try {
+      var saved = window.localStorage.getItem(THEME_KEY);
+      for (var i = 0; i < THEME_STEPS.length; i += 1) {
+        if (THEME_STEPS[i].id === saved) return saved;
+      }
+    } catch (error) {
+      // 保存が使えない環境では、標準の白を使います。
+    }
+    return "white";
+  }
+
+  function saveTheme() {
+    try {
+      window.localStorage.setItem(THEME_KEY, activeTheme);
+    } catch (error) {
+      // 保存できない場合でも、今回の表示には反映します。
+    }
+  }
+
+  function applyTheme(themeId) {
+    activeTheme = themeId;
+    if (themeId === "white") {
+      document.documentElement.removeAttribute("data-theme");
+    } else {
+      document.documentElement.setAttribute("data-theme", themeId);
+    }
+    var label = "白";
+    for (var i = 0; i < THEME_STEPS.length; i += 1) {
+      if (THEME_STEPS[i].id === themeId) label = THEME_STEPS[i].label;
+    }
+    for (var j = 0; j < elements.themeButtons.length; j += 1) {
+      var isActive = elements.themeButtons[j].getAttribute("data-theme-value") === themeId;
+      elements.themeButtons[j].classList.toggle("is-active", isActive);
+      elements.themeButtons[j].setAttribute("aria-pressed", String(isActive));
+    }
+    if (elements.themeSummary) elements.themeSummary.textContent = label;
+  }
+
+  function handleThemeChange(event) {
+    applyTheme(event.currentTarget.getAttribute("data-theme-value") || "white");
+    saveTheme();
   }
 
   function handlePeriodChange(event) {
